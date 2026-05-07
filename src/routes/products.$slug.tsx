@@ -2,6 +2,8 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
 import { getProduct, products, type Product } from "@/data/products";
 import logo from "@/assets/rumicarts-logo.png";
+import { CartButton } from "@/components/Cart";
+import { useCart } from "@/lib/cart";
 
 export const Route = createFileRoute("/products/$slug")({
   component: ProductDetail,
