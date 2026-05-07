@@ -171,7 +171,10 @@ function ProductDetail() {
                   +
                 </button>
               </div>
-              <button className="flex-1 bg-foreground text-background px-8 py-3 text-sm tracking-[0.25em] uppercase hover:opacity-90 transition">
+              <button
+                onClick={() => addItem(product, qty)}
+                className="flex-1 bg-foreground text-background px-8 py-3 text-sm tracking-[0.25em] uppercase hover:opacity-90 transition"
+              >
                 Add to cart
               </button>
             </div>
