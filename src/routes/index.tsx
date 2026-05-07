@@ -191,10 +191,9 @@ function Footer() {
     <footer className="border-t border-border py-12 px-6">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-6 text-sm text-muted-foreground">
         <div className="flex items-center gap-2 text-foreground">
-          <CartMark />
-          <span className="font-semibold">cartify</span>
+          <img src={logo} alt="Rumicarts" className="h-6 w-auto" />
         </div>
-        <p>© {new Date().getFullYear()} Cartify. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Rumicarts. All rights reserved.</p>
         <div className="flex gap-6">
           <a href="#" className="hover:text-foreground">Instagram</a>
           <a href="#" className="hover:text-foreground">Pinterest</a>
