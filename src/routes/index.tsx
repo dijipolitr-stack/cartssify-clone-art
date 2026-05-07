@@ -32,8 +32,7 @@ function Nav() {
     <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
         <Link to="/" className="flex items-center gap-2">
-          <CartMark />
-          <span className="font-semibold tracking-tight text-lg">cartify</span>
+          <img src={logo} alt="Rumicarts" className="h-7 md:h-8 w-auto" />
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
           <a href="#products" className="hover:text-foreground transition">Products</a>
