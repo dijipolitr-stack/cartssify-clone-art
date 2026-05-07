@@ -2,6 +2,8 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
 import { getProduct, products, type Product } from "@/data/products";
 import logo from "@/assets/rumicarts-logo.png";
+import { CartButton } from "@/components/Cart";
+import { useCart } from "@/lib/cart";
 
 export const Route = createFileRoute("/products/$slug")({
   component: ProductDetail,
@@ -56,12 +58,15 @@ function Nav() {
           <Link to="/products" className="hover:text-foreground transition">Products</Link>
           <Link to="/" className="hover:text-foreground transition">Home</Link>
         </nav>
-        <Link
-          to="/products"
-          className="text-sm font-medium border border-foreground px-4 py-2 hover:bg-foreground hover:text-background transition"
-        >
-          All products
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/products"
+            className="text-sm font-medium border border-foreground px-4 py-2 hover:bg-foreground hover:text-background transition"
+          >
+            All products
+          </Link>
+          <CartButton />
+        </div>
       </div>
     </header>
   );
@@ -90,6 +95,7 @@ function ProductDetail() {
   const images = [product.image, ...(product.gallery ?? [])];
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(1);
+  const { addItem } = useCart();
 
   const related = products.filter((p) => p.slug !== product.slug).slice(0, 4);
 
@@ -165,7 +171,10 @@ function ProductDetail() {
                   +
                 </button>
               </div>
-              <button className="flex-1 bg-foreground text-background px-8 py-3 text-sm tracking-[0.25em] uppercase hover:opacity-90 transition">
+              <button
+                onClick={() => addItem(product, qty)}
+                className="flex-1 bg-foreground text-background px-8 py-3 text-sm tracking-[0.25em] uppercase hover:opacity-90 transition"
+              >
                 Add to cart
               </button>
             </div>

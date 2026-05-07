@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { products } from "@/data/products";
 import logo from "@/assets/rumicarts-logo.png";
+import { CartButton } from "@/components/Cart";
 
 export const Route = createFileRoute("/products/")({
   component: ProductsPage,
@@ -43,12 +44,15 @@ function Nav() {
           <Link to="/" hash="features" className="hover:text-foreground transition">Features</Link>
           <Link to="/" hash="contact" className="hover:text-foreground transition">Contact</Link>
         </nav>
-        <Link
-          to="/products"
-          className="text-sm font-medium border border-foreground px-4 py-2 hover:bg-foreground hover:text-background transition"
-        >
-          Shop
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/products"
+            className="text-sm font-medium border border-foreground px-4 py-2 hover:bg-foreground hover:text-background transition"
+          >
+            Shop
+          </Link>
+          <CartButton />
+        </div>
       </div>
     </header>
   );
