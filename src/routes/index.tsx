@@ -3,16 +3,17 @@ import heroImg from "@/assets/hero-cart.jpg";
 import customImg from "@/assets/cart-custom.jpg";
 import portableImg from "@/assets/cart-portable.jpg";
 import rainbowImg from "@/assets/cart-rainbow.jpg";
+import logo from "@/assets/rumicarts-logo.png";
 
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Cartify — Custom Display Cart Solutions" },
+      { title: "Rumicarts — Mobile Cart Solutions for Events & Retail" },
       {
         name: "description",
         content:
-          "Custom, portable display carts designed for events, pop-ups and on-the-go retail. Built to your brand.",
+          "Mobile carts solutions for events and retail. Custom, portable display carts built to your brand.",
       },
     ],
   }),
@@ -31,8 +32,7 @@ function Nav() {
     <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
         <Link to="/" className="flex items-center gap-2">
-          <CartMark />
-          <span className="font-semibold tracking-tight text-lg">cartify</span>
+          <img src={logo} alt="Rumicarts" className="h-7 md:h-8 w-auto" />
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
           <a href="#products" className="hover:text-foreground transition">Products</a>
@@ -74,12 +74,12 @@ function Hero() {
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/40" />
       <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6 text-white">
         <div className="border border-white/80 px-10 md:px-20 py-10 md:py-14 max-w-3xl">
-          <h1 className="text-4xl md:text-7xl font-light tracking-[0.2em]">
-            CARTIFY
+          <h1 className="text-4xl md:text-7xl font-light tracking-[0.15em]">
+            RUMI<span className="opacity-70">CARTS</span>
           </h1>
           <div className="h-px w-24 bg-white/70 mx-auto my-6" />
           <p className="text-xs md:text-sm tracking-[0.35em] uppercase">
-            Display Cart Solutions
+            Mobile Carts Solutions for Events &amp; Retail
           </p>
         </div>
         <a
@@ -191,10 +191,9 @@ function Footer() {
     <footer className="border-t border-border py-12 px-6">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-6 text-sm text-muted-foreground">
         <div className="flex items-center gap-2 text-foreground">
-          <CartMark />
-          <span className="font-semibold">cartify</span>
+          <img src={logo} alt="Rumicarts" className="h-6 w-auto" />
         </div>
-        <p>© {new Date().getFullYear()} Cartify. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Rumicarts. All rights reserved.</p>
         <div className="flex gap-6">
           <a href="#" className="hover:text-foreground">Instagram</a>
           <a href="#" className="hover:text-foreground">Pinterest</a>
