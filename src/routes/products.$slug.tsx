@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
-import { getProduct, products } from "@/data/products";
+import { getProduct, products, type Product } from "@/data/products";
 import logo from "@/assets/rumicarts-logo.png";
 
 export const Route = createFileRoute("/products/$slug")({
