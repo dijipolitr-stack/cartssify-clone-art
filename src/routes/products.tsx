@@ -93,22 +93,29 @@ function ProductsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14">
           {products.map((p) => (
-            <article key={p.slug} className="group">
-              <div className="aspect-square overflow-hidden bg-secondary">
-                <img
-                  src={p.image}
-                  alt={p.title}
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
-                />
-              </div>
-              <div className="mt-5">
-                <h2 className="text-base font-medium text-foreground leading-snug">
-                  {p.title}
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">{p.price}</p>
-              </div>
-            </article>
+            <Link
+              key={p.slug}
+              to="/products/$slug"
+              params={{ slug: p.slug }}
+              className="group"
+            >
+              <article>
+                <div className="aspect-square overflow-hidden bg-secondary">
+                  <img
+                    src={p.image}
+                    alt={p.title}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                  />
+                </div>
+                <div className="mt-5">
+                  <h2 className="text-base font-medium text-foreground leading-snug group-hover:underline underline-offset-4">
+                    {p.title}
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">{p.price}</p>
+                </div>
+              </article>
+            </Link>
           ))}
         </div>
       </main>
