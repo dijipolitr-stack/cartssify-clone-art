@@ -74,12 +74,12 @@ function Hero() {
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/40" />
       <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6 text-white">
         <div className="border border-white/80 px-10 md:px-20 py-10 md:py-14 max-w-3xl">
-          <h1 className="text-4xl md:text-7xl font-light tracking-[0.2em]">
-            CARTIFY
+          <h1 className="text-4xl md:text-7xl font-light tracking-[0.15em]">
+            RUMI<span className="opacity-70">CARTS</span>
           </h1>
           <div className="h-px w-24 bg-white/70 mx-auto my-6" />
           <p className="text-xs md:text-sm tracking-[0.35em] uppercase">
-            Display Cart Solutions
+            Mobile Carts Solutions for Events &amp; Retail
           </p>
         </div>
         <a
