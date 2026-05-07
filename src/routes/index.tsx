@@ -41,12 +41,15 @@ function Nav() {
           <a href="#about" className="hover:text-foreground transition">About</a>
           <a href="#contact" className="hover:text-foreground transition">Contact</a>
         </nav>
-        <Link
-          to="/products"
-          className="text-sm font-medium border border-foreground px-4 py-2 hover:bg-foreground hover:text-background transition"
-        >
-          Shop now
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/products"
+            className="text-sm font-medium border border-foreground px-4 py-2 hover:bg-foreground hover:text-background transition"
+          >
+            Shop now
+          </Link>
+          <CartButton />
+        </div>
       </div>
     </header>
   );
