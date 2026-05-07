@@ -95,6 +95,7 @@ function ProductDetail() {
   const images = [product.image, ...(product.gallery ?? [])];
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(1);
+  const { addItem } = useCart();
 
   const related = products.filter((p) => p.slug !== product.slug).slice(0, 4);
 
