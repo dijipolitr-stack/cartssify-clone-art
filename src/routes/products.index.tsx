@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { products } from "@/data/products";
 import logo from "@/assets/rumicarts-logo.png";
 
-export const Route = createFileRoute("/products")({
+export const Route = createFileRoute("/products/")({
   component: ProductsPage,
   head: () => ({
     meta: [
