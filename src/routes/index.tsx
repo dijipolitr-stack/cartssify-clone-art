@@ -35,17 +35,17 @@ function Nav() {
           <img src={logo} alt="Rumicarts" className="h-7 md:h-8 w-auto" />
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-          <a href="#products" className="hover:text-foreground transition">Products</a>
+          <Link to="/products" className="hover:text-foreground transition">Products</Link>
           <a href="#features" className="hover:text-foreground transition">Features</a>
           <a href="#about" className="hover:text-foreground transition">About</a>
           <a href="#contact" className="hover:text-foreground transition">Contact</a>
         </nav>
-        <a
-          href="#products"
+        <Link
+          to="/products"
           className="text-sm font-medium border border-foreground px-4 py-2 hover:bg-foreground hover:text-background transition"
         >
-          Get started
-        </a>
+          Shop now
+        </Link>
       </div>
     </header>
   );
