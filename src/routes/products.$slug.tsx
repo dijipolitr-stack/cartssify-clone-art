@@ -86,7 +86,7 @@ function Footer() {
 }
 
 function ProductDetail() {
-  const { product } = Route.useLoaderData();
+  const { product } = Route.useLoaderData() as { product: Product };
   const images = [product.image, ...(product.gallery ?? [])];
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(1);
