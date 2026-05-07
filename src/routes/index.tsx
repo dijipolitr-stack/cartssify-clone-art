@@ -64,11 +64,13 @@ function CartMark() {
 function Hero() {
   return (
     <section className="relative w-full h-[88vh] min-h-[600px] overflow-hidden">
-      <img
-        src={heroImg}
-        alt="Custom display cart on a city street"
-        width={1920}
-        height={1280}
+      <video
+        src="/hero-cart.mp4"
+        poster={heroImg}
+        autoPlay
+        muted
+        loop
+        playsInline
         className="absolute inset-0 w-full h-full object-cover"
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/40" />
