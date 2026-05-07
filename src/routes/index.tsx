@@ -9,11 +9,11 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Cartify — Custom Display Cart Solutions" },
+      { title: "Rumicarts — Mobile Cart Solutions for Events & Retail" },
       {
         name: "description",
         content:
-          "Custom, portable display carts designed for events, pop-ups and on-the-go retail. Built to your brand.",
+          "Mobile carts solutions for events and retail. Custom, portable display carts built to your brand.",
       },
     ],
   }),
