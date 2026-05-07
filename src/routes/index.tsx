@@ -4,6 +4,7 @@ import customImg from "@/assets/cart-custom.jpg";
 import portableImg from "@/assets/cart-portable.jpg";
 import rainbowImg from "@/assets/cart-rainbow.jpg";
 import logo from "@/assets/rumicarts-logo.png";
+import { CartButton } from "@/components/Cart";
 
 export const Route = createFileRoute("/")({
   component: Index,
