@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Product } from "@/data/products";
 import { useCart } from "@/lib/cart";
+import cartMask from "@/assets/cart-12-natural-mask.png";
 
 type Props = {
   product: Product;
@@ -219,22 +220,26 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                 }}
               >
                 <img
-                  src={product.image}
+                  src={cartMask}
                   alt={product.title}
                   className="max-h-[55vh] w-auto object-contain block"
                 />
-                {/* Color tint overlay */}
+                {/* Color tint overlay — masked to cart silhouette */}
                 {color !== "White" && (
                   <div
                     className="absolute inset-0 pointer-events-none"
                     style={{
                       backgroundColor: COLORS.find((c) => c.name === color)?.hex,
                       mixBlendMode: "multiply",
-                      opacity: color === "Natural" ? 0.35 : 0.7,
-                      WebkitMaskImage:
-                        "radial-gradient(ellipse at center, #000 60%, transparent 100%)",
-                      maskImage:
-                        "radial-gradient(ellipse at center, #000 60%, transparent 100%)",
+                      opacity: color === "Natural" ? 0.55 : 0.85,
+                      WebkitMaskImage: `url(${cartMask})`,
+                      maskImage: `url(${cartMask})`,
+                      WebkitMaskRepeat: "no-repeat",
+                      maskRepeat: "no-repeat",
+                      WebkitMaskSize: "contain",
+                      maskSize: "contain",
+                      WebkitMaskPosition: "center",
+                      maskPosition: "center",
                     }}
                   />
                 )}
