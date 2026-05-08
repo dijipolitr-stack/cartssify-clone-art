@@ -205,20 +205,76 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
 
           {/* Right: preview */}
           <div className="bg-secondary flex flex-col">
-            <div className="flex-1 flex items-center justify-center p-6 relative">
-              <img
-                src={product.image}
-                alt={product.title}
-                className="max-h-[55vh] w-auto object-contain"
-              />
-              {logo && (
+            <div className="flex-1 flex items-center justify-center p-6 relative overflow-hidden">
+              <div
+                className="relative max-h-[55vh]"
+                style={{
+                  filter: material === "Solid Wood"
+                    ? "contrast(1.05) saturate(1.15)"
+                    : material === "Plywood"
+                      ? "contrast(1.02) saturate(1.05) sepia(0.08)"
+                      : "none",
+                  transform: thickness === "15mm" ? "scale(1.03)" : "scale(1)",
+                  transition: "transform 300ms ease, filter 300ms ease",
+                }}
+              >
                 <img
-                  src={logo}
-                  alt="Your logo"
-                  className="absolute h-16 w-16 object-contain"
-                  style={{ top: "40%", left: "50%", transform: "translate(-50%, -50%)" }}
+                  src={product.image}
+                  alt={product.title}
+                  className="max-h-[55vh] w-auto object-contain block"
                 />
-              )}
+                {/* Color tint overlay */}
+                {color !== "White" && (
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      backgroundColor: COLORS.find((c) => c.name === color)?.hex,
+                      mixBlendMode: "multiply",
+                      opacity: color === "Natural" ? 0.35 : 0.7,
+                      WebkitMaskImage:
+                        "radial-gradient(ellipse at center, #000 60%, transparent 100%)",
+                      maskImage:
+                        "radial-gradient(ellipse at center, #000 60%, transparent 100%)",
+                    }}
+                  />
+                )}
+                {/* Hardware finish hint (small dot on door area) */}
+                <div
+                  className="absolute h-2.5 w-2.5 rounded-full border border-black/20 shadow"
+                  style={{
+                    top: "52%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    backgroundColor:
+                      hardware === "Brass"
+                        ? "#b08a3e"
+                        : hardware === "Stainless Steel"
+                          ? "#c9ccd1"
+                          : "#1a1a1a",
+                    transition: "background-color 200ms ease",
+                  }}
+                  title={`${hardware} hardware`}
+                />
+                {logo && (
+                  <img
+                    src={logo}
+                    alt="Your logo"
+                    className="absolute h-16 w-16 object-contain"
+                    style={{ top: "55%", left: "50%", transform: "translate(-50%, -50%)" }}
+                  />
+                )}
+              </div>
+              {/* Active config chip */}
+              <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1.5 justify-center">
+                {[color, material, thickness, `${hardware} HW`].map((label) => (
+                  <span
+                    key={label}
+                    className="text-[10px] tracking-[0.15em] uppercase bg-background/80 backdrop-blur px-2 py-1 border border-border"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
             </div>
             <div className="bg-background border-t border-border p-6">
               <div className="flex items-baseline justify-between mb-4">

@@ -1,3 +1,5 @@
+import cart12Natural from "@/assets/cart-12-natural.jpg";
+
 export type Product = {
   slug: string;
   title: string;
@@ -25,12 +27,8 @@ export const products: Product[] = [
     slug: "cart-12-natural",
     title: "Cart 12 Natural",
     price: "$1,800.00 USD",
-    image: "https://cartssify.com/cdn/shop/files/mobile-coffee-cart-front-view.png?v=1731834977&width=1200",
-    gallery: [
-      "https://cartssify.com/cdn/shop/files/mobile-coffee-cart-front-view.jpg?v=1723647254&width=1200",
-      "https://cartssify.com/cdn/shop/files/mobile-coffee-cart-back-view-shelf.jpg?v=1723647320&width=1200",
-      "https://cartssify.com/cdn/shop/files/SK_photo-54.jpg?v=1718127348&width=1200",
-    ],
+    image: cart12Natural,
+    gallery: [],
     tagline: "Mobile Coffee Cart — Natural Plywood",
     description:
       "Showcase your products in style with our flagship Mobile Coffee Cart. Designed with mobility in mind, it disassembles into a flat-pack secured with a safety belt — transportation is as simple as packing a suitcase.",
