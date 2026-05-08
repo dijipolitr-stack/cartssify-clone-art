@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Product } from "@/data/products";
 import { useCart } from "@/lib/cart";
+import cartMask from "@/assets/cart-12-natural-mask.png";
 
 type Props = {
   product: Product;
