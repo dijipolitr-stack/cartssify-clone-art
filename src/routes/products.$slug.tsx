@@ -264,6 +264,12 @@ function ProductDetail() {
       </main>
 
       <Footer />
+
+      <CustomizeDialog
+        product={product}
+        open={customizeOpen}
+        onOpenChange={setCustomizeOpen}
+      />
     </div>
   );
 }
