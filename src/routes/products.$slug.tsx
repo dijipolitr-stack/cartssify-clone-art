@@ -3,6 +3,7 @@ import { useState } from "react";
 import { getProduct, products, type Product } from "@/data/products";
 import logo from "@/assets/rumicarts-logo.png";
 import { CartButton } from "@/components/Cart";
+import { CustomizeDialog } from "@/components/CustomizeDialog";
 import { useCart } from "@/lib/cart";
 
 export const Route = createFileRoute("/products/$slug")({
@@ -95,6 +96,7 @@ function ProductDetail() {
   const images = [product.image, ...(product.gallery ?? [])];
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(1);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
   const { addItem } = useCart();
 
   const related = products.filter((p) => p.slug !== product.slug).slice(0, 4);
@@ -179,6 +181,13 @@ function ProductDetail() {
               </button>
             </div>
 
+            <button
+              onClick={() => setCustomizeOpen(true)}
+              className="mt-3 w-full border border-foreground text-foreground px-8 py-3 text-sm tracking-[0.25em] uppercase hover:bg-foreground hover:text-background transition"
+            >
+              Customize
+            </button>
+
             <p className="mt-4 text-xs text-muted-foreground">
               Production usually takes 2–3 weeks. Worldwide shipping.
             </p>
@@ -255,6 +264,12 @@ function ProductDetail() {
       </main>
 
       <Footer />
+
+      <CustomizeDialog
+        product={product}
+        open={customizeOpen}
+        onOpenChange={setCustomizeOpen}
+      />
     </div>
   );
 }
