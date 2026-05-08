@@ -181,6 +181,13 @@ function ProductDetail() {
               </button>
             </div>
 
+            <button
+              onClick={() => setCustomizeOpen(true)}
+              className="mt-3 w-full border border-foreground text-foreground px-8 py-3 text-sm tracking-[0.25em] uppercase hover:bg-foreground hover:text-background transition"
+            >
+              Customize
+            </div>
+
             <p className="mt-4 text-xs text-muted-foreground">
               Production usually takes 2–3 weeks. Worldwide shipping.
             </p>
