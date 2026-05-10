@@ -158,6 +158,48 @@ export const en = {
     askForSpecs: "Ask for specs",
   },
 
+  customizeDialog: {
+    title: "Customize your cart",
+    sections: {
+      thickness: "Material thickness",
+      material: "Material type",
+      color: "Color type",
+      hardware: "Hardware finish",
+      logo: "Custom logo (optional)",
+      notes: "Special requests",
+    },
+    materials: {
+      Laminate: "Laminate",
+      Plywood: "Plywood",
+      "Solid Wood": "Solid Wood",
+    },
+    hardware: {
+      Black: "Black",
+      "Stainless Steel": "Stainless Steel",
+      Brass: "Brass",
+    },
+    colors: {
+      Natural: "Natural",
+      White: "White",
+      Black: "Black",
+      Sand: "Sand",
+      Olive: "Olive",
+      Terracotta: "Terracotta",
+    },
+    logoUpload: "Upload your logo (PNG/SVG)",
+    logoChange: "Change logo",
+    logoRemove: "Remove",
+    logoDisclaimer:
+      "Your logo will be saved to the order for our team to apply during production. It will not appear on the live preview.",
+    notesPlaceholder: "Add any special requests, branding instructions, or extras here...",
+    total: "Total",
+    addToCart: "Add to cart",
+    leadTime: "Production usually takes 2–3 weeks. Worldwide shipping.",
+    chips: {
+      hardwareSuffix: "HW",
+    },
+  },
+
   language: {
     label: "Language",
     en: "English",

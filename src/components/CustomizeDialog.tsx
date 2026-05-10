@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Product } from "@/data/products";
 import { useCart } from "@/lib/cart";
+import { useT } from "@/lib/i18n";
 // Default render set — used as a fallback when a product hasn't supplied its
 // own customizeRenders. Cart 12 is the flagship so its visuals also act as the
 // catch-all for older entries.
@@ -57,6 +58,8 @@ function formatPrice(amount: number, currency: string) {
 }
 
 export function CustomizeDialog({ product, open, onOpenChange }: Props) {
+  const t = useT();
+  const td = t.customizeDialog;
   const { addItem, openCart } = useCart();
   const [thickness, setThickness] = useState<(typeof THICKNESS)[number]>("12mm");
   const [material, setMaterial] = useState<(typeof MATERIAL_TYPES)[number]>("Laminate");
@@ -85,7 +88,9 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
       ...product,
       price: `${formatPrice(total, base.currency)} USD`,
       slug: `${product.slug}--${thickness}-${material}-${color}-${hardware}`.toLowerCase().replace(/\s+/g, "-"),
-      title: `${product.title} (${color}, ${material}, ${thickness})`,
+      // Use the locale-translated names so the cart drawer shows TR users a
+      // proper Turkish description instead of an English suffix.
+      title: `${product.title} (${td.colors[color]}, ${td.materials[material]}, ${thickness})`,
     };
     // Build the order note: any free-form notes the customer typed, plus a
     // line confirming the uploaded logo filename. Cleaner than having the
@@ -119,29 +124,29 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
           {/* Left: options */}
           <div className="p-6 md:p-8 overflow-y-auto">
             <h2 className="text-2xl md:text-3xl font-light tracking-tight">
-              Customize your cart
+              {td.title}
             </h2>
 
             {/* Thickness */}
             <Section
-              title="Material thickness"
+              title={td.sections.thickness}
               right={<span className="text-muted-foreground">{thickness}</span>}
             >
               <div className="grid grid-cols-2 gap-3">
-                {THICKNESS.map((t) => (
+                {THICKNESS.map((tk) => (
                   <button
-                    key={t}
-                    onClick={() => setThickness(t)}
+                    key={tk}
+                    onClick={() => setThickness(tk)}
                     className={`py-3 text-sm border transition ${
-                      thickness === t
+                      thickness === tk
                         ? "border-foreground bg-secondary"
                         : "border-border hover:border-foreground"
                     }`}
                   >
-                    {t}
-                    {PRICE_DELTA.thickness[t] > 0 && (
+                    {tk}
+                    {PRICE_DELTA.thickness[tk] > 0 && (
                       <span className="text-muted-foreground ml-2 text-xs">
-                        +${PRICE_DELTA.thickness[t]}
+                        +${PRICE_DELTA.thickness[tk]}
                       </span>
                     )}
                   </button>
@@ -150,7 +155,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
             </Section>
 
             {/* Material */}
-            <Section title="Material type">
+            <Section title={td.sections.material}>
               <select
                 value={material}
                 onChange={(e) => setMaterial(e.target.value as typeof material)}
@@ -158,7 +163,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
               >
                 {MATERIAL_TYPES.map((m) => (
                   <option key={m} value={m}>
-                    {m}
+                    {td.materials[m]}
                     {PRICE_DELTA.material[m] > 0 ? ` (+$${PRICE_DELTA.material[m]})` : ""}
                   </option>
                 ))}
@@ -167,27 +172,27 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
 
             {/* Color */}
             <Section
-              title="Color type"
-              right={<span className="text-muted-foreground">{color}</span>}
+              title={td.sections.color}
+              right={<span className="text-muted-foreground">{td.colors[color]}</span>}
             >
               <div className="flex flex-wrap gap-3">
                 {COLORS.map((c) => (
                   <button
                     key={c.name}
                     onClick={() => setColor(c.name)}
-                    title={c.name}
+                    title={td.colors[c.name]}
                     className={`h-10 w-10 rounded-full border-2 transition ${
                       color === c.name ? "border-foreground" : "border-border"
                     }`}
                     style={{ backgroundColor: c.hex }}
-                    aria-label={c.name}
+                    aria-label={td.colors[c.name]}
                   />
                 ))}
               </div>
             </Section>
 
             {/* Hardware */}
-            <Section title="Hardware finish">
+            <Section title={td.sections.hardware}>
               <div className="grid grid-cols-3 gap-3">
                 {HARDWARE.map((h) => (
                   <button
@@ -199,16 +204,16 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                         : "border-border hover:border-foreground"
                     }`}
                   >
-                    {h}
+                    {td.hardware[h]}
                   </button>
                 ))}
               </div>
             </Section>
 
             {/* Logo upload */}
-            <Section title="Custom logo (optional)">
+            <Section title={td.sections.logo}>
               <label className="block border border-dashed border-border px-3 py-4 text-sm text-muted-foreground cursor-pointer hover:border-foreground transition text-center">
-                {logoFilename ? "Change logo" : "Upload your logo (PNG/SVG)"}
+                {logoFilename ? td.logoChange : td.logoUpload}
                 <input
                   type="file"
                   accept="image/*"
@@ -234,24 +239,24 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                       }}
                       className="text-xs underline text-muted-foreground"
                     >
-                      Remove
+                      {td.logoRemove}
                     </button>
                   </div>
                 </div>
               )}
               <p className="mt-2 text-[11px] text-muted-foreground/80 leading-snug">
-                Your logo will be saved to the order for our team to apply during production. It will not appear on the live preview.
+                {td.logoDisclaimer}
               </p>
             </Section>
 
             {/* Notes */}
-            <Section title="Special requests (optional)">
+            <Section title={td.sections.notes}>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
                 maxLength={500}
-                placeholder="Tell us anything else about your cart…"
+                placeholder={td.notesPlaceholder}
                 className="w-full border border-border bg-background px-3 py-3 text-sm focus:outline-none focus:border-foreground resize-none"
               />
             </Section>
@@ -311,12 +316,17 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                           : "#1a1a1a",
                     transition: "background-color 200ms ease",
                   }}
-                  title={`${hardware} hardware`}
+                  title={`${td.hardware[hardware]} hardware`}
                 />
               </div>
               {/* Active config chip */}
               <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1.5 justify-center">
-                {[color, material, thickness, `${hardware} HW`].map((label) => (
+                {[
+                  td.colors[color],
+                  td.materials[material],
+                  thickness,
+                  `${td.hardware[hardware]} ${td.chips.hardwareSuffix}`,
+                ].map((label) => (
                   <span
                     key={label}
                     className="text-[10px] tracking-[0.15em] uppercase bg-background/80 backdrop-blur px-2 py-1 border border-border"
@@ -329,7 +339,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
             <div className="bg-background border-t border-border p-6">
               <div className="flex items-baseline justify-between mb-4">
                 <span className="text-xs tracking-[0.2em] uppercase text-muted-foreground">
-                  Total
+                  {td.total}
                 </span>
                 <span className="text-2xl font-light">
                   {formatPrice(total, base.currency)}
@@ -339,10 +349,10 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                 onClick={handleAdd}
                 className="w-full bg-foreground text-background py-4 text-sm tracking-[0.25em] uppercase hover:opacity-90 transition"
               >
-                Add to cart
+                {td.addToCart}
               </button>
               <p className="mt-3 text-[11px] text-muted-foreground text-center">
-                Production usually takes 2–3 weeks. Worldwide shipping.
+                {td.leadTime}
               </p>
             </div>
           </div>

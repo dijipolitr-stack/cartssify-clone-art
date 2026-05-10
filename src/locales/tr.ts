@@ -160,6 +160,48 @@ export const tr: typeof en = {
     askForSpecs: "Boyutları sor",
   },
 
+  customizeDialog: {
+    title: "Tezgahını özelleştir",
+    sections: {
+      thickness: "Malzeme kalınlığı",
+      material: "Malzeme türü",
+      color: "Renk seçimi",
+      hardware: "Aksesuar rengi",
+      logo: "Özel logo (opsiyonel)",
+      notes: "Özel talepler",
+    },
+    materials: {
+      Laminate: "Laminat",
+      Plywood: "Kontrplak",
+      "Solid Wood": "Masif Ahşap",
+    },
+    hardware: {
+      Black: "Siyah",
+      "Stainless Steel": "Paslanmaz Çelik",
+      Brass: "Pirinç",
+    },
+    colors: {
+      Natural: "Natural",
+      White: "Beyaz",
+      Black: "Siyah",
+      Sand: "Kum",
+      Olive: "Zeytin",
+      Terracotta: "Terracotta",
+    },
+    logoUpload: "Logonuzu yükleyin (PNG/SVG)",
+    logoChange: "Logoyu değiştir",
+    logoRemove: "Kaldır",
+    logoDisclaimer:
+      "Logonuz sipariş notuna kaydedilecek ve üretim sırasında ekibimiz tarafından uygulanacaktır. Canlı önizlemede görünmeyecektir.",
+    notesPlaceholder: "Özel istekler, marka detayları veya ek talepleri buraya yazın...",
+    total: "Toplam",
+    addToCart: "Sepete ekle",
+    leadTime: "Üretim genellikle 2–3 hafta sürer. Dünya geneli teslimat.",
+    chips: {
+      hardwareSuffix: "AKS",
+    },
+  },
+
   language: {
     label: "Dil",
     en: "English",
