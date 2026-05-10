@@ -1,12 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { useCart } from "@/lib/cart";
+import { useT } from "@/lib/i18n";
 
 export function CartButton() {
   const { count, openCart } = useCart();
+  const t = useT();
   return (
     <button
       onClick={openCart}
-      aria-label="Open cart"
+      aria-label={t.cart.title}
       className="relative inline-flex items-center justify-center w-10 h-10 hover:opacity-70 transition"
     >
       <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -30,6 +32,7 @@ function parsePrice(s: string): number {
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, setQty, removeItem } = useCart();
+  const t = useT();
   const subtotal = items.reduce((s, i) => s + parsePrice(i.price) * i.qty, 0);
 
   return (
@@ -47,8 +50,8 @@ export function CartDrawer() {
         aria-hidden={!isOpen}
       >
         <header className="flex items-center justify-between px-6 py-5 border-b border-border">
-          <h2 className="text-xs tracking-[0.3em] uppercase">Your Cart</h2>
-          <button onClick={closeCart} aria-label="Close cart" className="text-2xl leading-none">
+          <h2 className="text-xs tracking-[0.3em] uppercase">{t.cart.title}</h2>
+          <button onClick={closeCart} aria-label={t.cart.close} className="text-2xl leading-none">
             ×
           </button>
         </header>
@@ -56,13 +59,13 @@ export function CartDrawer() {
         <div className="flex-1 overflow-y-auto">
           {items.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center px-6 text-muted-foreground">
-              <p className="text-sm">Your cart is empty.</p>
+              <p className="text-sm">{t.cart.empty}</p>
               <Link
                 to="/products"
                 onClick={closeCart}
                 className="mt-6 text-xs tracking-[0.25em] uppercase border-b border-foreground pb-1 text-foreground"
               >
-                Browse products
+                {t.cart.browse}
               </Link>
             </div>
           ) : (
@@ -82,12 +85,18 @@ export function CartDrawer() {
                       {item.title}
                     </Link>
                     <p className="mt-1 text-xs text-muted-foreground">{item.price}</p>
+                    {/* Order notes set in the Customize dialog (logo filename, special requests) */}
+                    {item.notes && (
+                      <p className="mt-2 text-[11px] text-muted-foreground bg-secondary border-l-2 border-border pl-2 py-1.5 whitespace-pre-line leading-relaxed">
+                        {item.notes}
+                      </p>
+                    )}
                     <div className="mt-3 flex items-center justify-between">
                       <div className="flex items-center border border-border">
                         <button
                           onClick={() => setQty(item.slug, item.qty - 1)}
                           className="px-2 py-1 text-sm hover:bg-secondary"
-                          aria-label="Decrease"
+                          aria-label={t.cart.decrease}
                         >
                           −
                         </button>
@@ -95,7 +104,7 @@ export function CartDrawer() {
                         <button
                           onClick={() => setQty(item.slug, item.qty + 1)}
                           className="px-2 py-1 text-sm hover:bg-secondary"
-                          aria-label="Increase"
+                          aria-label={t.cart.increase}
                         >
                           +
                         </button>
@@ -104,7 +113,7 @@ export function CartDrawer() {
                         onClick={() => removeItem(item.slug)}
                         className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
                       >
-                        Remove
+                        {t.cart.remove}
                       </button>
                     </div>
                   </div>
@@ -117,16 +126,16 @@ export function CartDrawer() {
         {items.length > 0 && (
           <footer className="border-t border-border px-6 py-5 space-y-4">
             <div className="flex items-center justify-between text-sm">
-              <span className="tracking-[0.2em] uppercase text-muted-foreground">Subtotal</span>
+              <span className="tracking-[0.2em] uppercase text-muted-foreground">{t.cart.subtotal}</span>
               <span className="font-medium">
                 ${subtotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Shipping and taxes calculated at checkout.
+              {t.cart.shippingNote}
             </p>
             <button className="w-full bg-foreground text-background py-3 text-sm tracking-[0.25em] uppercase hover:opacity-90 transition">
-              Checkout
+              {t.cart.checkout}
             </button>
           </footer>
         )}

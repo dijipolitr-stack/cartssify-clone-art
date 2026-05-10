@@ -1,24 +1,16 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
-import { getProduct, products, type Product } from "@/data/products";
-import logo from "@/assets/rumicarts-logo.png";
-import { CartButton } from "@/components/Cart";
+import { getProduct, products, localizeProduct, type Product } from "@/data/products";
+import { TopBar } from "@/components/TopBar";
+import { SiteNav } from "@/components/SiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
 import { CustomizeDialog } from "@/components/CustomizeDialog";
 import { useCart } from "@/lib/cart";
+import { useI18n, useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/products/$slug")({
   component: ProductDetail,
-  notFoundComponent: () => (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
-      <h1 className="text-3xl font-light">Product not found</h1>
-      <Link
-        to="/products"
-        className="mt-6 text-sm tracking-[0.2em] uppercase border-b border-foreground pb-1"
-      >
-        Back to products
-      </Link>
-    </div>
-  ),
+  notFoundComponent: NotFound,
   loader: ({ params }) => {
     const product = getProduct(params.slug);
     if (!product) throw notFound();
@@ -40,74 +32,46 @@ export const Route = createFileRoute("/products/$slug")({
   },
 });
 
-function TopBar() {
+function NotFound() {
+  const t = useT();
   return (
-    <div className="w-full bg-foreground text-background text-xs tracking-[0.2em] uppercase py-2 text-center">
-      Worldwide Shipping
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+      <h1 className="text-3xl font-light">{t.productDetail.notFound}</h1>
+      <Link
+        to="/products"
+        className="mt-6 text-sm tracking-[0.2em] uppercase border-b border-foreground pb-1"
+      >
+        {t.productDetail.backToProducts}
+      </Link>
     </div>
   );
 }
 
-function Nav() {
-  return (
-    <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border">
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-        <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Rumicarts" className="h-7 md:h-8 w-auto" />
-        </Link>
-        <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-          <Link to="/products" className="hover:text-foreground transition">Products</Link>
-          <Link to="/" className="hover:text-foreground transition">Home</Link>
-        </nav>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/products"
-            className="text-sm font-medium border border-foreground px-4 py-2 hover:bg-foreground hover:text-background transition"
-          >
-            All products
-          </Link>
-          <CartButton />
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="border-t border-border py-12 px-6 mt-20">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-6 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2 text-foreground">
-          <img src={logo} alt="Rumicarts" className="h-6 w-auto" />
-        </div>
-        <p>© {new Date().getFullYear()} Rumicarts. All rights reserved.</p>
-        <div className="flex gap-6">
-          <a href="#" className="hover:text-foreground">Instagram</a>
-          <a href="#" className="hover:text-foreground">Pinterest</a>
-          <a href="#" className="hover:text-foreground">Contact</a>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
 function ProductDetail() {
-  const { product } = Route.useLoaderData() as { product: Product };
+  const loader = Route.useLoaderData() as { product: Product };
+  const { locale } = useI18n();
+  // Re-localize the loader product on every render so the visible content
+  // changes immediately when the user toggles the language switcher.
+  const product = localizeProduct(loader.product, locale);
+  const t = useT();
   const images = [product.image, ...(product.gallery ?? [])];
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(1);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const { addItem } = useCart();
 
-  const related = products.filter((p) => p.slug !== product.slug).slice(0, 4);
+  const related = products
+    .filter((p) => p.slug !== product.slug)
+    .slice(0, 4)
+    .map((p) => localizeProduct(p, locale));
 
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
-      <Nav />
+      <SiteNav variant="product-detail" />
 
       <nav className="max-w-7xl mx-auto px-6 pt-8 text-xs tracking-[0.2em] uppercase text-muted-foreground">
-        <Link to="/products" className="hover:text-foreground">Products</Link>
+        <Link to="/products" className="hover:text-foreground">{t.nav.products}</Link>
         <span className="mx-2">/</span>
         <span className="text-foreground">{product.title}</span>
       </nav>
@@ -160,7 +124,7 @@ function ProductDetail() {
                 <button
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
                   className="px-4 py-3 text-lg hover:bg-secondary transition"
-                  aria-label="Decrease quantity"
+                  aria-label={t.cart.decrease}
                 >
                   −
                 </button>
@@ -168,7 +132,7 @@ function ProductDetail() {
                 <button
                   onClick={() => setQty((q) => q + 1)}
                   className="px-4 py-3 text-lg hover:bg-secondary transition"
-                  aria-label="Increase quantity"
+                  aria-label={t.cart.increase}
                 >
                   +
                 </button>
@@ -177,7 +141,7 @@ function ProductDetail() {
                 onClick={() => addItem(product, qty)}
                 className="flex-1 bg-foreground text-background px-8 py-3 text-sm tracking-[0.25em] uppercase hover:opacity-90 transition"
               >
-                Add to cart
+                {t.productDetail.addToCart}
               </button>
             </div>
 
@@ -185,7 +149,7 @@ function ProductDetail() {
               onClick={() => setCustomizeOpen(true)}
               className="mt-3 w-full border border-foreground text-foreground px-8 py-3 text-sm tracking-[0.25em] uppercase hover:bg-foreground hover:text-background transition"
             >
-              Customize
+              {t.productDetail.customize}
             </button>
 
             <p className="mt-4 text-xs text-muted-foreground">
@@ -194,7 +158,7 @@ function ProductDetail() {
 
             <div className="mt-10 border-t border-border pt-8">
               <h2 className="text-sm tracking-[0.25em] uppercase text-foreground">
-                Key features
+                {t.productDetail.features}
               </h2>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                 {product.features.map((f) => (
@@ -206,10 +170,10 @@ function ProductDetail() {
               </ul>
             </div>
 
-            {product.specs && product.specs.length > 0 && (
+            {product.specs && product.specs.length > 0 ? (
               <div className="mt-10 border-t border-border pt-8">
                 <h2 className="text-sm tracking-[0.25em] uppercase text-foreground">
-                  Specifications
+                  {t.productDetail.specs}
                 </h2>
                 <dl className="mt-4 grid grid-cols-2 gap-y-3 text-sm">
                   {product.specs.map((s) => (
@@ -219,6 +183,21 @@ function ProductDetail() {
                     </div>
                   ))}
                 </dl>
+              </div>
+            ) : (
+              <div className="mt-10 border-t border-border pt-8">
+                <h2 className="text-sm tracking-[0.25em] uppercase text-foreground">
+                  {t.productDetail.specs}
+                </h2>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  {t.productDetail.specsComingSoon}
+                </p>
+                <a
+                  href="#contact"
+                  className="mt-4 inline-block text-xs tracking-[0.2em] uppercase border-b border-foreground pb-1 hover:opacity-60 transition"
+                >
+                  {t.productDetail.askForSpecs}
+                </a>
               </div>
             )}
           </div>
@@ -263,7 +242,7 @@ function ProductDetail() {
         </section>
       </main>
 
-      <Footer />
+      <SiteFooter topMargin />
 
       <CustomizeDialog
         product={product}

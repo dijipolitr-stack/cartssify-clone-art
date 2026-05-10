@@ -1,10 +1,16 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import heroImg from "@/assets/hero-cart.jpg";
 import customImg from "@/assets/cart-custom.jpg";
 import portableImg from "@/assets/cart-portable.jpg";
 import rainbowImg from "@/assets/cart-rainbow.jpg";
-import logo from "@/assets/rumicarts-logo.png";
-import { CartButton } from "@/components/Cart";
+import { TopBar } from "@/components/TopBar";
+import { SiteNav } from "@/components/SiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
+import { AboutSection } from "@/components/AboutSection";
+import { TrustSection } from "@/components/TrustSection";
+import { ContactSection } from "@/components/ContactSection";
+import { UseCasesSection } from "@/components/UseCasesSection";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -20,52 +26,8 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-function TopBar() {
-  return (
-    <div className="w-full bg-foreground text-background text-xs tracking-[0.2em] uppercase py-2 text-center">
-      Worldwide Shipping
-    </div>
-  );
-}
-
-function Nav() {
-  return (
-    <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border">
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-        <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Rumicarts" className="h-7 md:h-8 w-auto" />
-        </Link>
-        <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-          <Link to="/products" className="hover:text-foreground transition">Products</Link>
-          <a href="#features" className="hover:text-foreground transition">Features</a>
-          <a href="#about" className="hover:text-foreground transition">About</a>
-          <a href="#contact" className="hover:text-foreground transition">Contact</a>
-        </nav>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/products"
-            className="text-sm font-medium border border-foreground px-4 py-2 hover:bg-foreground hover:text-background transition"
-          >
-            Shop now
-          </Link>
-          <CartButton />
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function CartMark() {
-  return (
-    <svg viewBox="0 0 40 28" className="w-8 h-6" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M2 6h36M6 6v14h28V6M10 6V3h20v3" strokeLinecap="square" />
-      <circle cx="12" cy="24" r="2.5" />
-      <circle cx="28" cy="24" r="2.5" />
-    </svg>
-  );
-}
-
 function Hero() {
+  const t = useT();
   return (
     <section className="relative w-full h-[88vh] min-h-[600px] overflow-hidden">
       <video
@@ -85,14 +47,14 @@ function Hero() {
           </h1>
           <div className="h-px w-24 bg-white/70 mx-auto my-6" />
           <p className="text-xs md:text-sm tracking-[0.35em] uppercase">
-            Mobile Carts Solutions for Events &amp; Retail
+            {t.hero.tagline}
           </p>
         </div>
         <a
-          href="#products"
+          href="#features"
           className="mt-10 inline-block bg-white text-foreground px-8 py-3 text-sm tracking-[0.2em] uppercase hover:bg-white/90 transition"
         >
-          Get started
+          {t.hero.cta}
         </a>
       </div>
     </section>
@@ -150,99 +112,45 @@ function Feature({ image, eyebrow, title, body, cta, reverse }: FeatureProps) {
   );
 }
 
-function Stats() {
-  const items = [
-    { k: "500+", v: "Carts delivered" },
-    { k: "40+", v: "Countries shipped" },
-    { k: "100%", v: "Customizable" },
-    { k: "24/7", v: "Customer care" },
-  ];
-  return (
-    <section className="bg-foreground text-background py-20">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-        {items.map((i) => (
-          <div key={i.v}>
-            <div className="text-4xl md:text-5xl font-light">{i.k}</div>
-            <div className="mt-2 text-xs tracking-[0.25em] uppercase text-background/60">
-              {i.v}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function CTA() {
-  return (
-    <section id="contact" className="py-28 md:py-40 text-center px-6">
-      <p className="text-xs tracking-[0.3em] uppercase text-muted-foreground">
-        Ready when you are
-      </p>
-      <h2 className="mt-6 text-4xl md:text-6xl font-light tracking-tight max-w-3xl mx-auto leading-tight">
-        Build a cart that moves with your brand.
-      </h2>
-      <a
-        href="#"
-        className="mt-10 inline-block bg-foreground text-background px-10 py-4 text-sm tracking-[0.25em] uppercase hover:opacity-90 transition"
-      >
-        Start building
-      </a>
-    </section>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="border-t border-border py-12 px-6">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-6 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2 text-foreground">
-          <img src={logo} alt="Rumicarts" className="h-6 w-auto" />
-        </div>
-        <p>© {new Date().getFullYear()} Rumicarts. All rights reserved.</p>
-        <div className="flex gap-6">
-          <a href="#" className="hover:text-foreground">Instagram</a>
-          <a href="#" className="hover:text-foreground">Pinterest</a>
-          <a href="#" className="hover:text-foreground">Contact</a>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
 function Index() {
+  const t = useT();
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
-      <Nav />
-      <main id="products">
+      <SiteNav variant="home" />
+      <main>
         <Hero />
-        <Feature
-          image={customImg}
-          eyebrow="01 — Customize"
-          title="Design your custom display cart."
-          body="Bring your vision to life. Choose colors, materials and finishes with our easy builder and create a cart that perfectly matches your brand."
-          cta="Start building"
-        />
-        <Feature
-          image={portableImg}
-          eyebrow="02 — Portable"
-          title="Designed for durability & portability."
-          body="When the event is over, fold your cart into a compact, flat-pack form. Smooth wheels make moving to the next venue effortless."
-          cta="Learn more"
-          reverse
-        />
-        <Feature
-          image={rainbowImg}
-          eyebrow="03 — Iconic"
-          title="A canvas for unforgettable brands."
-          body="From minimalist whites to bold rainbow finishes, our carts become a centerpiece — an experience customers remember."
-          cta="See gallery"
-        />
-        <Stats />
-        <CTA />
+        {/* The 3 feature blocks live under a #features anchor so the nav link works */}
+        <div id="features">
+          <Feature
+            image={customImg}
+            eyebrow={t.features.customize.eyebrow}
+            title={t.features.customize.title}
+            body={t.features.customize.body}
+            cta={t.features.customize.cta}
+          />
+          <Feature
+            image={portableImg}
+            eyebrow={t.features.portable.eyebrow}
+            title={t.features.portable.title}
+            body={t.features.portable.body}
+            cta={t.features.portable.cta}
+            reverse
+          />
+          <Feature
+            image={rainbowImg}
+            eyebrow={t.features.iconic.eyebrow}
+            title={t.features.iconic.title}
+            body={t.features.iconic.body}
+            cta={t.features.iconic.cta}
+          />
+        </div>
+        <UseCasesSection />
+        <AboutSection />
+        <TrustSection />
+        <ContactSection />
       </main>
-      <Footer />
+      <SiteFooter />
     </div>
   );
 }

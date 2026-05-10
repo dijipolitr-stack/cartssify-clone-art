@@ -4,11 +4,13 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useLocation,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import { CartProvider } from "@/lib/cart";
 import { CartDrawer } from "@/components/Cart";
+import { I18nProvider } from "@/lib/i18n";
 
 import appCss from "../styles.css?url";
 
@@ -112,13 +114,22 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // Pull ?lang= straight from the router's parsed location so the very first
+  // HTML rendered (server-side, in dev or prerender) already shows the right
+  // language. Without this, ?lang=tr would only flip after client hydration.
+  const location = useLocation();
+  const langParam = (location.search as { lang?: string } | undefined)?.lang;
+  const initialLocale =
+    langParam === "tr" || langParam === "en" ? langParam : undefined;
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CartProvider>
-        <Outlet />
-        <CartDrawer />
-      </CartProvider>
+      <I18nProvider initialLocale={initialLocale}>
+        <CartProvider>
+          <Outlet />
+          <CartDrawer />
+        </CartProvider>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }

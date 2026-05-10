@@ -7,6 +7,10 @@ export type CartItem = {
   price: string;
   image: string;
   qty: number;
+  /** Free-form text the customer wrote in the Customize dialog — special requests, branding instructions, etc. */
+  notes?: string;
+  /** Filename of the logo the customer uploaded; the actual file is collected separately at fulfilment time. */
+  logoFilename?: string;
 };
 
 type CartContextValue = {
@@ -15,7 +19,11 @@ type CartContextValue = {
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
-  addItem: (product: Product, qty?: number) => void;
+  addItem: (
+    product: Product,
+    qty?: number,
+    meta?: { notes?: string; logoFilename?: string },
+  ) => void;
   removeItem: (slug: string) => void;
   setQty: (slug: string, qty: number) => void;
   clear: () => void;
@@ -54,7 +62,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       isOpen,
       openCart: () => setIsOpen(true),
       closeCart: () => setIsOpen(false),
-      addItem: (product, qty = 1) => {
+      addItem: (product, qty = 1, meta) => {
         setItems((prev) => {
           const existing = prev.find((i) => i.slug === product.slug);
           if (existing) {
@@ -70,6 +78,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
               price: product.price,
               image: product.image,
               qty,
+              ...(meta?.notes ? { notes: meta.notes } : {}),
+              ...(meta?.logoFilename ? { logoFilename: meta.logoFilename } : {}),
             },
           ];
         });
