@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import heroImg from "@/assets/hero-cart.jpg";
 import customImg from "@/assets/cart-custom.jpg";
 import portableImg from "@/assets/cart-portable.jpg";
@@ -10,7 +11,9 @@ import { AboutSection } from "@/components/AboutSection";
 import { TrustSection } from "@/components/TrustSection";
 import { ContactSection } from "@/components/ContactSection";
 import { UseCasesSection } from "@/components/UseCasesSection";
-import { useT } from "@/lib/i18n";
+import { CustomizeDialog } from "@/components/CustomizeDialog";
+import { getProduct, localizeProduct } from "@/data/products";
+import { useI18n, useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -67,10 +70,26 @@ type FeatureProps = {
   title: string;
   body: string;
   cta?: string;
+  /**
+   * Where to send the user when they click the CTA. If a callback is provided,
+   * the CTA renders as a button (used for the Customize feature → opens the
+   * Customize dialog). Falls back to the in-page contact anchor.
+   */
+  ctaHref?: string;
+  onCtaClick?: () => void;
   reverse?: boolean;
 };
 
-function Feature({ image, eyebrow, title, body, cta, reverse }: FeatureProps) {
+function Feature({
+  image,
+  eyebrow,
+  title,
+  body,
+  cta,
+  ctaHref = "#contact",
+  onCtaClick,
+  reverse,
+}: FeatureProps) {
   return (
     <section className="py-20 md:py-32 border-t border-border">
       <div
@@ -98,14 +117,22 @@ function Feature({ image, eyebrow, title, body, cta, reverse }: FeatureProps) {
           <p className="mt-6 text-base text-muted-foreground leading-relaxed">
             {body}
           </p>
-          {cta && (
-            <a
-              href="#contact"
-              className="mt-8 inline-block text-sm tracking-[0.2em] uppercase border-b border-foreground pb-1 hover:opacity-60 transition"
-            >
-              {cta}
-            </a>
-          )}
+          {cta &&
+            (onCtaClick ? (
+              <button
+                onClick={onCtaClick}
+                className="mt-8 inline-block text-sm tracking-[0.2em] uppercase border-b border-foreground pb-1 hover:opacity-60 transition cursor-pointer"
+              >
+                {cta}
+              </button>
+            ) : (
+              <a
+                href={ctaHref}
+                className="mt-8 inline-block text-sm tracking-[0.2em] uppercase border-b border-foreground pb-1 hover:opacity-60 transition"
+              >
+                {cta}
+              </a>
+            ))}
         </div>
       </div>
     </section>
@@ -114,6 +141,14 @@ function Feature({ image, eyebrow, title, body, cta, reverse }: FeatureProps) {
 
 function Index() {
   const t = useT();
+  const { locale } = useI18n();
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  // Use Cart 12 Natural — the flagship product with its own custom render set —
+  // as the example in the homepage Customize feature CTA. Localized so the
+  // dialog opens with TR strings when the visitor is browsing in Turkish.
+  const flagship = getProduct("cart-12-natural");
+  const flagshipLocalized = flagship ? localizeProduct(flagship, locale) : null;
+
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
@@ -128,6 +163,9 @@ function Index() {
             title={t.features.customize.title}
             body={t.features.customize.body}
             cta={t.features.customize.cta}
+            onCtaClick={
+              flagshipLocalized ? () => setCustomizeOpen(true) : undefined
+            }
           />
           <Feature
             image={portableImg}
@@ -151,6 +189,13 @@ function Index() {
         <ContactSection />
       </main>
       <SiteFooter />
+      {flagshipLocalized && (
+        <CustomizeDialog
+          product={flagshipLocalized}
+          open={customizeOpen}
+          onOpenChange={setCustomizeOpen}
+        />
+      )}
     </div>
   );
 }

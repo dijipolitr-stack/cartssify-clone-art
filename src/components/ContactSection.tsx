@@ -161,7 +161,7 @@ export function ContactSection() {
             </p>
           )}
 
-          {isPlaceholderNumber && (
+          {isPlaceholderNumber && import.meta.env.DEV && (
             <p className="text-xs text-muted-foreground border border-dashed border-border px-4 py-3">
               ⚠️ Placeholder WhatsApp number active. Replace
               {" "}<code className="text-foreground">WHATSAPP_NUMBER</code>{" "}
