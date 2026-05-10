@@ -158,7 +158,7 @@ export const products: Product[] = [
     ],
     customizeRenders: CART_12_RENDERS,
     tr: {
-      title: "Cart 12 Natural",
+      title: "Tezgah 12 Natural",
       tagline: "Mobil Kahve Tezgahı — Natural Kontrplak",
       description:
         "Ürünlerinizi şık bir şekilde sergileyin: amiral gemimiz Mobil Kahve Tezgahı. Hareketlilik düşünülerek tasarlandı; flat-pack şeklinde sökülüp emniyet kemeriyle sabitleniyor — taşıması bavul kadar kolay.",
@@ -216,8 +216,8 @@ export const products: Product[] = [
     ],
     customizeRenders: DISPLAY_CART_SLIDE_RENDERS,
     tr: {
-      title: "Display Cart 12 Siyah – Sürmeli Logo Yuvalı",
-      tagline: "Logo yuvası entegre siyah Cart 12",
+      title: "Teşhir Tezgahı 12 Siyah – Sürmeli Logo Yuvalı",
+      tagline: "Logo yuvası entegre siyah Tezgah 12",
       description:
         "Sürmeli logo işlevi fabrika çıkışı entegre edilmiş siyah teşhir tezgahımız — etkinlikler arasında marka görselinizi saniyeler içinde değiştirin, tezgaha hiç dokunmadan.",
       features: [
@@ -242,7 +242,7 @@ export const products: Product[] = [
     ],
     customizeRenders: CART_15_RENDERS,
     tr: {
-      title: "Cart 15 Siyah Heavy Duty",
+      title: "Tezgah 15 Siyah Sağlam Tip",
       tagline: "Daha büyük formatlı, ağır iş tezgahı",
       description:
         "En büyük tezgahımız: yoğun trafikli alanlar ve daha ağır teşhirler için üretildi. 15 mm kontrplak yapı, Rumicarts'ın sade siluetini koruyarak ekstra güç sağlar.",
@@ -270,8 +270,8 @@ export const products: Product[] = [
       { label: "Height", value: "95 cm (37.6 in)" },
     ],
     tr: {
-      title: "Display Cart 12 - Siyah",
-      tagline: "Mat siyah Display Cart 12",
+      title: "Teşhir Tezgahı 12 - Siyah",
+      tagline: "Mat siyah Teşhir Tezgahı 12",
       description:
         "En popüler tezgahımızın iddialı, tamamen siyah versiyonu. Etkinlik, pop-up ve perakende mağazaları için sade ama göz alıcı bir teşhir aracı arayan premium markalar için ideal.",
       features: baseFeaturesTr,
@@ -297,7 +297,7 @@ export const products: Product[] = [
     ],
     tr: {
       title: "Kumaş Çatılı Mobil Kahve Tezgahı",
-      tagline: "Entegre kumaş çatılı Cart 12",
+      tagline: "Entegre kumaş çatılı Tezgah 12",
       description:
         "Mobil Kahve Tezgahımız, çıkarılabilir kumaş çatı kanopisiyle birlikte — açık hava etkinlikleri ve sokak satıcıları için gölge, varlık ve güçlü bir siluet sağlar.",
       features: [
