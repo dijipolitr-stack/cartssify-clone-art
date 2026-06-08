@@ -1,26 +1,29 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ChangeEvent } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Product } from "@/data/products";
 import { useCart } from "@/lib/cart";
-import { useT } from "@/lib/i18n";
-// Default render set — used as a fallback when a product hasn't supplied its
-// own customizeRenders. Cart 12 is the flagship so its visuals also act as the
-// catch-all for older entries.
-import cart12Natural from "@/assets/products/cart-12-renders/cart-12-natural.png";
-import cart12White from "@/assets/products/cart-12-renders/cart-12-white.png";
-import cart12Black from "@/assets/products/cart-12-renders/cart-12-black.png";
-import cart12Sand from "@/assets/products/cart-12-renders/cart-12-sand.png";
-import cart12Olive from "@/assets/products/cart-12-renders/cart-12-olive.png";
-import cart12Terracotta from "@/assets/products/cart-12-renders/cart-12-terracotta.png";
-
-const FALLBACK_RENDERS = {
-  Natural: cart12Natural,
-  White: cart12White,
-  Black: cart12Black,
-  Sand: cart12Sand,
-  Olive: cart12Olive,
-  Terracotta: cart12Terracotta,
-} as const;
+import { useI18n } from "@/lib/i18n";
+import {
+  ANGLES,
+  CONFIG_PRODUCTS,
+  CONFIG_UI,
+  CRITERIA,
+  MOCKUP_SURFACES,
+  computeTotal,
+  defaultSelection,
+  formatPrice,
+  getConfigProduct,
+  getConfigProductBySlug,
+  getOption,
+  isCriterionActive,
+  pick,
+  realRender,
+  type AngleId,
+  type ConfigProductId,
+  type CriterionId,
+  type Selection,
+} from "@/data/configurator";
+import { cartPreviewSvg, svgToDataUri } from "@/lib/cart-preview";
 
 type Props = {
   product: Product;
@@ -28,86 +31,69 @@ type Props = {
   onOpenChange: (open: boolean) => void;
 };
 
-const THICKNESS = ["12mm", "15mm"] as const;
-const MATERIAL_TYPES = ["Laminate", "Plywood", "Solid Wood"] as const;
-type ColorName = "Natural" | "White" | "Black" | "Sand" | "Olive" | "Terracotta";
-const COLORS: { name: ColorName; hex: string }[] = [
-  { name: "Natural",    hex: "#d9c4a3" },
-  { name: "White",      hex: "#f3f1ec" },
-  { name: "Black",      hex: "#1a1a1a" },
-  { name: "Sand",       hex: "#c9b08a" },
-  { name: "Olive",      hex: "#6b6f4a" },
-  { name: "Terracotta", hex: "#b85c3c" },
-];
-const HARDWARE = ["Black", "Stainless Steel", "Brass"] as const;
-
-const PRICE_DELTA = {
-  thickness: { "12mm": 0, "15mm": 120 },
-  material: { Laminate: 0, Plywood: 80, "Solid Wood": 250 },
-  hardware: { Black: 0, "Stainless Steel": 60, Brass: 90 },
-} as const;
-
-function parseBasePrice(price: string): { amount: number; currency: string } {
-  const match = price.match(/([£$€])\s?([\d,]+(?:\.\d+)?)/);
-  if (!match) return { amount: 0, currency: "$" };
-  return { amount: parseFloat(match[2].replace(/,/g, "")), currency: match[1] };
-}
-
-function formatPrice(amount: number, currency: string) {
-  return `${currency}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
+const NEUTRAL = "#c8c3ba"; // "Özel" / hex'siz seçimler için nötr placeholder rengi
 
 export function CustomizeDialog({ product, open, onOpenChange }: Props) {
-  const t = useT();
-  const td = t.customizeDialog;
-  const { addItem, openCart } = useCart();
-  const [thickness, setThickness] = useState<(typeof THICKNESS)[number]>("12mm");
-  const [material, setMaterial] = useState<(typeof MATERIAL_TYPES)[number]>("Laminate");
-  const [color, setColor] = useState<ColorName>("Natural");
-  const [hardware, setHardware] = useState<(typeof HARDWARE)[number]>("Black");
-  // Customer's logo: we only track that they've supplied it (filename + a small
-  // preview thumbnail). The full file isn't shown on the cart preview render —
-  // it's collected at order fulfilment time and applied during production.
+  const { locale } = useI18n();
+  const ui = CONFIG_UI[locale];
+
+  // Açan ürün 4 konfigüre edilebilir üründen biriyse onu önseç; değilse ilki.
+  const initialProductId =
+    getConfigProductBySlug(product.slug)?.id ?? CONFIG_PRODUCTS[0].id;
+
+  const [productId, setProductId] = useState<ConfigProductId>(initialProductId);
+  const [selection, setSelection] = useState<Selection>(() => defaultSelection());
+  const [customText, setCustomText] = useState<Partial<Record<CriterionId, string>>>({});
+  const [surfaces, setSurfaces] = useState<Record<string, boolean>>({});
   const [logoFilename, setLogoFilename] = useState<string | null>(null);
   const [logoThumb, setLogoThumb] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
+  const [angle, setAngle] = useState<AngleId>("on");
 
-  // Each product can ship its own per-color render set. If it doesn't, we fall
-  // back to the Cart 12 visuals so the dialog never shows a broken image.
-  const activeRenders = product.customizeRenders ?? FALLBACK_RENDERS;
+  const { addItem, openCart } = useCart();
 
-  const base = useMemo(() => parseBasePrice(product.price), [product.price]);
-  const total =
-    base.amount +
-    PRICE_DELTA.thickness[thickness] +
-    PRICE_DELTA.material[material] +
-    PRICE_DELTA.hardware[hardware];
+  const tenteOn = selection.kumasTente === "var";
 
-  const handleAdd = () => {
-    const customized: Product = {
-      ...product,
-      price: `${formatPrice(total, base.currency)} USD`,
-      slug: `${product.slug}--${thickness}-${material}-${color}-${hardware}`.toLowerCase().replace(/\s+/g, "-"),
-      // Use the locale-translated names so the cart drawer shows TR users a
-      // proper Turkish description instead of an English suffix.
-      title: `${product.title} (${td.colors[color]}, ${td.materials[material]}, ${thickness})`,
-    };
-    // Build the order note: any free-form notes the customer typed, plus a
-    // line confirming the uploaded logo filename. Cleaner than having the
-    // logo render onto the preview image.
-    const noteParts: string[] = [];
-    if (notes.trim()) noteParts.push(notes.trim());
-    if (logoFilename) noteParts.push(`Logo: ${logoFilename}`);
-    const orderNote = noteParts.join("\n\n") || undefined;
-    addItem(customized, 1, {
-      notes: orderNote,
-      logoFilename: logoFilename || undefined,
-    });
-    onOpenChange(false);
-    openCart();
-  };
+  const total = useMemo(
+    () => computeTotal(productId, selection, surfaces),
+    [productId, selection, surfaces],
+  );
 
-  const onLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // --- Önizleme görseli -------------------------------------------------
+  // İleride: katmanlı gerçek render kompozisyonu (RENDER_REGISTRY). Registry
+  // boşken seçimleri yansıtan şematik SVG kullanılır.
+  const previewSrc = useMemo(() => {
+    const heroReal = realRender(productId, angle, "hero");
+    if (heroReal) return heroReal; // Faz 1 gerçek render mevcutsa kullan
+    const hex = (id: CriterionId) => getOption(id, selection[id])?.hex ?? NEUTRAL;
+    return svgToDataUri(
+      cartPreviewSvg({
+        angle,
+        bodyHex: hex("govdeRengi"),
+        tente: tenteOn,
+        tenteHex: hex("tenteRengi"),
+        wheelsDecorative: selection.dekoratifTekerlek === "var",
+        shelf: selection.tutamacRaf === "raf",
+        backCover: selection.arkaKapak === "var",
+        metalHex: hex("metalRengi"),
+      }),
+    );
+  }, [productId, angle, selection, tenteOn]);
+
+  // Aktif açıda gösterilecek logo overlay'leri.
+  const activeLogoSurfaces = MOCKUP_SURFACES.filter(
+    (s) =>
+      s.angle === angle &&
+      surfaces[s.id] &&
+      logoThumb &&
+      (s.group !== "tente" || tenteOn),
+  );
+
+  // --- Handlers ---------------------------------------------------------
+  const choose = (criterion: CriterionId, valueId: string) =>
+    setSelection((prev) => ({ ...prev, [criterion]: valueId }));
+
+  const onLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setLogoFilename(file.name);
@@ -117,109 +103,176 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     reader.readAsDataURL(file);
   };
 
+  const handleAdd = () => {
+    const cp = getConfigProduct(productId);
+
+    // Sipariş notu — placeholder fiyat/önizleme döneminde tam konfigürasyonu
+    // metne dökerek üretim için kaybolmamasını garanti eder.
+    const lines: string[] = [];
+    lines.push(`${ui.material}: ${pick(cp.label, locale)}`);
+    for (const c of CRITERIA) {
+      if (!isCriterionActive(c, selection)) continue;
+      const opt = getOption(c.id, selection[c.id]);
+      if (!opt) continue;
+      let val = pick(opt.label, locale);
+      if (opt.isCustom && customText[c.id]?.trim()) {
+        val += ` — ${customText[c.id]!.trim()}`;
+      }
+      lines.push(`${pick(c.label, locale)}: ${val}`);
+    }
+    const enabledSurfaces = MOCKUP_SURFACES.filter(
+      (s) => surfaces[s.id] && (s.group !== "tente" || tenteOn),
+    );
+    if (enabledSurfaces.length) {
+      lines.push(
+        `${ui.mockupTitle}: ` +
+          enabledSurfaces.map((s) => pick(s.label, locale)).join(", "),
+      );
+    }
+    if (logoFilename) lines.push(`Logo: ${logoFilename}`);
+    if (notes.trim()) lines.push(`\n${notes.trim()}`);
+
+    const customized: Product = {
+      ...product,
+      slug: `${cp.slug}--${Object.values(selection).join("-")}`.toLowerCase(),
+      title: `${pick(cp.label, locale)} — ${pick(getOption("govdeRengi", selection.govdeRengi)!.label, locale)}`,
+      price: `${formatPrice(total)} USD`,
+      image: previewSrc,
+      description: pick(cp.label, locale),
+      features: [],
+    };
+
+    addItem(customized, 1, {
+      notes: lines.join("\n"),
+      logoFilename: logoFilename || undefined,
+    });
+    onOpenChange(false);
+    openCart();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl p-0 gap-0 overflow-hidden">
-        <div className="grid md:grid-cols-2 max-h-[85vh]">
-          {/* Left: options */}
+        <div className="grid md:grid-cols-2 max-h-[88vh]">
+          {/* ---- Sol: seçenekler ---- */}
           <div className="p-6 md:p-8 overflow-y-auto">
             <h2 className="text-2xl md:text-3xl font-light tracking-tight">
-              {td.title}
+              {ui.title}
             </h2>
 
-            {/* Thickness */}
-            <Section
-              title={td.sections.thickness}
-              right={<span className="text-muted-foreground">{thickness}</span>}
-            >
+            {/* Malzeme Seçimi (Ürün) */}
+            <Section title={ui.material}>
               <div className="grid grid-cols-2 gap-3">
-                {THICKNESS.map((tk) => (
+                {CONFIG_PRODUCTS.map((cp) => (
                   <button
-                    key={tk}
-                    onClick={() => setThickness(tk)}
-                    className={`py-3 text-sm border transition ${
-                      thickness === tk
+                    key={cp.id}
+                    onClick={() => setProductId(cp.id)}
+                    className={`py-3 px-2 text-xs border transition text-center ${
+                      productId === cp.id
                         ? "border-foreground bg-secondary"
                         : "border-border hover:border-foreground"
                     }`}
                   >
-                    {tk}
-                    {PRICE_DELTA.thickness[tk] > 0 && (
-                      <span className="text-muted-foreground ml-2 text-xs">
-                        +${PRICE_DELTA.thickness[tk]}
+                    {pick(cp.label, locale)}
+                  </button>
+                ))}
+              </div>
+            </Section>
+
+            {/* 7 kriter */}
+            {CRITERIA.map((c) => {
+              if (!isCriterionActive(c, selection)) return null;
+              const selectedId = selection[c.id];
+              const selectedOpt = getOption(c.id, selectedId);
+              const showCustom = selectedOpt?.isCustom;
+              return (
+                <Section
+                  key={c.id}
+                  title={pick(c.label, locale)}
+                  right={
+                    selectedOpt ? (
+                      <span className="text-muted-foreground">
+                        {pick(selectedOpt.label, locale)}
                       </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </Section>
+                    ) : undefined
+                  }
+                >
+                  {c.control === "swatch" ? (
+                    <div className="flex flex-wrap gap-3">
+                      {c.values.map((v) => {
+                        const active = v.id === selectedId;
+                        return (
+                          <button
+                            key={v.id}
+                            onClick={() => choose(c.id, v.id)}
+                            title={pick(v.label, locale)}
+                            aria-label={pick(v.label, locale)}
+                            className={`h-10 w-10 rounded-full border-2 transition flex items-center justify-center text-[11px] ${
+                              active ? "border-foreground" : "border-border"
+                            }`}
+                            style={
+                              v.hex
+                                ? { backgroundColor: v.hex }
+                                : {
+                                    backgroundImage:
+                                      "repeating-linear-gradient(45deg,#ddd,#ddd 4px,#f3f1ec 4px,#f3f1ec 8px)",
+                                  }
+                            }
+                          >
+                            {v.isCustom && <span className="text-foreground/70">+</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div
+                      className={`grid gap-3 ${c.values.length > 2 ? "grid-cols-3" : "grid-cols-2"}`}
+                    >
+                      {c.values.map((v) => {
+                        const active = v.id === selectedId;
+                        return (
+                          <button
+                            key={v.id}
+                            onClick={() => choose(c.id, v.id)}
+                            className={`py-3 text-sm border transition ${
+                              active
+                                ? "border-foreground bg-secondary"
+                                : "border-border hover:border-foreground"
+                            }`}
+                          >
+                            {pick(v.label, locale)}
+                            {v.priceDelta > 0 && (
+                              <span className="text-muted-foreground ml-1.5 text-xs">
+                                +${v.priceDelta}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
-            {/* Material */}
-            <Section title={td.sections.material}>
-              <select
-                value={material}
-                onChange={(e) => setMaterial(e.target.value as typeof material)}
-                className="w-full border border-border bg-background px-3 py-3 text-sm focus:outline-none focus:border-foreground"
-              >
-                {MATERIAL_TYPES.map((m) => (
-                  <option key={m} value={m}>
-                    {td.materials[m]}
-                    {PRICE_DELTA.material[m] > 0 ? ` (+$${PRICE_DELTA.material[m]})` : ""}
-                  </option>
-                ))}
-              </select>
-            </Section>
+                  {/* "Özel" → serbest metin */}
+                  {showCustom && (
+                    <input
+                      type="text"
+                      value={customText[c.id] ?? ""}
+                      onChange={(e) =>
+                        setCustomText((prev) => ({ ...prev, [c.id]: e.target.value }))
+                      }
+                      placeholder={ui.customPlaceholder(pick(c.label, locale))}
+                      className="mt-3 w-full border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:border-foreground"
+                    />
+                  )}
+                </Section>
+              );
+            })}
 
-            {/* Color */}
-            <Section
-              title={td.sections.color}
-              right={<span className="text-muted-foreground">{td.colors[color]}</span>}
-            >
-              <div className="flex flex-wrap gap-3">
-                {COLORS.map((c) => (
-                  <button
-                    key={c.name}
-                    onClick={() => setColor(c.name)}
-                    title={td.colors[c.name]}
-                    className={`h-10 w-10 rounded-full border-2 transition ${
-                      color === c.name ? "border-foreground" : "border-border"
-                    }`}
-                    style={{ backgroundColor: c.hex }}
-                    aria-label={td.colors[c.name]}
-                  />
-                ))}
-              </div>
-            </Section>
-
-            {/* Hardware */}
-            <Section title={td.sections.hardware}>
-              <div className="grid grid-cols-3 gap-3">
-                {HARDWARE.map((h) => (
-                  <button
-                    key={h}
-                    onClick={() => setHardware(h)}
-                    className={`py-3 text-xs border transition ${
-                      hardware === h
-                        ? "border-foreground bg-secondary"
-                        : "border-border hover:border-foreground"
-                    }`}
-                  >
-                    {td.hardware[h]}
-                  </button>
-                ))}
-              </div>
-            </Section>
-
-            {/* Logo upload */}
-            <Section title={td.sections.logo}>
+            {/* Mockup — logo */}
+            <Section title={ui.mockupTitle}>
               <label className="block border border-dashed border-border px-3 py-4 text-sm text-muted-foreground cursor-pointer hover:border-foreground transition text-center">
-                {logoFilename ? td.logoChange : td.logoUpload}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={onLogoChange}
-                  className="hidden"
-                />
+                {logoFilename ? ui.logoChange : ui.logoUpload}
+                <input type="file" accept="image/*" onChange={onLogoChange} className="hidden" />
               </label>
               {logoFilename && (
                 <div className="mt-3 flex items-center gap-3">
@@ -239,126 +292,184 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                       }}
                       className="text-xs underline text-muted-foreground"
                     >
-                      {td.logoRemove}
+                      {ui.logoRemove}
                     </button>
                   </div>
                 </div>
               )}
-              <p className="mt-2 text-[11px] text-muted-foreground/80 leading-snug">
-                {td.logoDisclaimer}
+
+              {/* Gövde — folyo yüzeyleri */}
+              <SurfaceGroup
+                heading={ui.surfacesGovde}
+                surfaces={MOCKUP_SURFACES.filter((s) => s.group === "govde")}
+                state={surfaces}
+                locale={locale}
+                yok={ui.yok}
+                varText={ui.varText}
+                onToggle={(id, val) => setSurfaces((p) => ({ ...p, [id]: val }))}
+              />
+
+              {/* Tente — baskı yüzeyleri (tente "var" değilse pasif) */}
+              <SurfaceGroup
+                heading={ui.surfacesTente}
+                surfaces={MOCKUP_SURFACES.filter((s) => s.group === "tente")}
+                state={surfaces}
+                locale={locale}
+                yok={ui.yok}
+                varText={ui.varText}
+                disabled={!tenteOn}
+                disabledHint={ui.tenteRequired}
+                onToggle={(id, val) => setSurfaces((p) => ({ ...p, [id]: val }))}
+              />
+
+              <p className="mt-3 text-[11px] text-muted-foreground/80 leading-snug">
+                {ui.logoHint}
               </p>
             </Section>
 
-            {/* Notes */}
-            <Section title={td.sections.notes}>
+            {/* Notlar */}
+            <Section title={ui.notes}>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
                 maxLength={500}
-                placeholder={td.notesPlaceholder}
+                placeholder={ui.notesPlaceholder}
                 className="w-full border border-border bg-background px-3 py-3 text-sm focus:outline-none focus:border-foreground resize-none"
               />
             </Section>
           </div>
 
-          {/* Right: preview */}
+          {/* ---- Sağ: önizleme ---- */}
           <div className="bg-secondary flex flex-col">
-            <div className="flex-1 flex items-center justify-center p-6 relative overflow-hidden">
-              <div
-                className="relative w-full max-w-md aspect-[1400/871]"
-                style={{
-                  // Material gives a subtle finish difference: solid wood looks slightly
-                  // richer, plywood slightly warmer, laminate is the neutral baseline.
-                  filter:
-                    material === "Solid Wood"
-                      ? "contrast(1.05) saturate(1.10)"
-                      : material === "Plywood"
-                        ? "contrast(1.02) saturate(1.05) sepia(0.05)"
-                        : "none",
-                  // Thicker (15 mm) reads as a slightly chunkier silhouette.
-                  transform: thickness === "15mm" ? "scale(1.03)" : "scale(1)",
-                  transition: "transform 300ms ease, filter 300ms ease",
-                }}
-              >
-                {/*
-                  Each colour swatch corresponds to a pre-rendered transparent PNG.
-                  Switching colours simply swaps the image source — no CSS
-                  blending tricks, so the cart appears uniformly painted in the
-                  exact production finish.
-                */}
-                {COLORS.map((c) => (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden min-h-[320px]">
+              <div className="relative w-full max-w-md aspect-square">
+                <img
+                  src={previewSrc}
+                  alt={`${pick(getConfigProduct(productId).label, locale)} — ${angle}`}
+                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                />
+                {/* Logo overlay'leri */}
+                {activeLogoSurfaces.map((s) => (
                   <img
-                    key={c.name}
-                    src={activeRenders[c.name]}
-                    alt={`${product.title} — ${c.name}`}
-                    className="absolute inset-0 w-full h-full object-contain pointer-events-none transition-opacity duration-300"
+                    key={s.id}
+                    src={logoThumb!}
+                    alt=""
+                    className="absolute object-contain pointer-events-none"
                     style={{
-                      opacity: c.name === color ? 1 : 0,
+                      left: `${s.rect.x * 100}%`,
+                      top: `${s.rect.y * 100}%`,
+                      width: `${s.rect.w * 100}%`,
+                      height: `${s.rect.h * 100}%`,
                     }}
-                    // Preload all variants so colour switching is instant after first open
-                    loading="eager"
-                    decoding="async"
                   />
                 ))}
-                {/* Hardware finish hint (small dot near the door / handle area) */}
-                <div
-                  className="absolute h-2.5 w-2.5 rounded-full border border-black/20 shadow"
-                  style={{
-                    top: "52%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    backgroundColor:
-                      hardware === "Brass"
-                        ? "#b08a3e"
-                        : hardware === "Stainless Steel"
-                          ? "#c9ccd1"
-                          : "#1a1a1a",
-                    transition: "background-color 200ms ease",
-                  }}
-                  title={`${td.hardware[hardware]} hardware`}
-                />
               </div>
-              {/* Active config chip */}
-              <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1.5 justify-center">
-                {[
-                  td.colors[color],
-                  td.materials[material],
-                  thickness,
-                  `${td.hardware[hardware]} ${td.chips.hardwareSuffix}`,
-                ].map((label) => (
-                  <span
-                    key={label}
-                    className="text-[10px] tracking-[0.15em] uppercase bg-background/80 backdrop-blur px-2 py-1 border border-border"
+
+              {/* Açı seçici */}
+              <div className="mt-4 flex flex-wrap gap-1.5 justify-center">
+                {ANGLES.map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => setAngle(a.id)}
+                    className={`text-[10px] tracking-[0.1em] uppercase px-2 py-1 border transition ${
+                      angle === a.id
+                        ? "border-foreground bg-background"
+                        : "border-border bg-background/60 hover:border-foreground"
+                    }`}
                   >
-                    {label}
-                  </span>
+                    {pick(a.label, locale)}
+                  </button>
                 ))}
               </div>
+
+              <p className="mt-3 text-[10px] text-muted-foreground/70 text-center">
+                {ui.placeholderNote}
+              </p>
             </div>
+
             <div className="bg-background border-t border-border p-6">
               <div className="flex items-baseline justify-between mb-4">
                 <span className="text-xs tracking-[0.2em] uppercase text-muted-foreground">
-                  {td.total}
+                  {ui.total}
                 </span>
-                <span className="text-2xl font-light">
-                  {formatPrice(total, base.currency)}
-                </span>
+                <span className="text-2xl font-light">{formatPrice(total)}</span>
               </div>
               <button
                 onClick={handleAdd}
                 className="w-full bg-foreground text-background py-4 text-sm tracking-[0.25em] uppercase hover:opacity-90 transition"
               >
-                {td.addToCart}
+                {ui.addToCart}
               </button>
               <p className="mt-3 text-[11px] text-muted-foreground text-center">
-                {td.leadTime}
+                {ui.leadTime}
               </p>
             </div>
           </div>
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function SurfaceGroup({
+  heading,
+  surfaces,
+  state,
+  locale,
+  yok,
+  varText,
+  disabled,
+  disabledHint,
+  onToggle,
+}: {
+  heading: string;
+  surfaces: typeof MOCKUP_SURFACES;
+  state: Record<string, boolean>;
+  locale: "en" | "tr";
+  yok: string;
+  varText: string;
+  disabled?: boolean;
+  disabledHint?: string;
+  onToggle: (id: string, val: boolean) => void;
+}) {
+  return (
+    <div className={`mt-5 ${disabled ? "opacity-50" : ""}`}>
+      <p className="text-xs font-medium mb-2">{heading}</p>
+      {disabled && disabledHint && (
+        <p className="text-[11px] text-muted-foreground mb-2">{disabledHint}</p>
+      )}
+      <div className="space-y-2">
+        {surfaces.map((s) => {
+          const on = !!state[s.id];
+          return (
+            <div key={s.id} className="flex items-center justify-between gap-3">
+              <span className="text-sm text-foreground/90">{pick(s.label, locale)}</span>
+              <div className="flex border border-border">
+                <button
+                  disabled={disabled}
+                  onClick={() => onToggle(s.id, false)}
+                  className={`px-3 py-1.5 text-xs transition ${
+                    !on ? "bg-secondary text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {yok}
+                </button>
+                <button
+                  disabled={disabled}
+                  onClick={() => onToggle(s.id, true)}
+                  className={`px-3 py-1.5 text-xs transition ${
+                    on ? "bg-foreground text-background" : "text-muted-foreground"
+                  }`}
+                >
+                  {varText}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

@@ -143,10 +143,9 @@ function Index() {
   const t = useT();
   const { locale } = useI18n();
   const [customizeOpen, setCustomizeOpen] = useState(false);
-  // Use Cart 12 Natural — the flagship product with its own custom render set —
-  // as the example in the homepage Customize feature CTA. Localized so the
-  // dialog opens with TR strings when the visitor is browsing in Turkish.
-  const flagship = getProduct("cart-12-natural");
+  // Homepage "Customize" CTA, configuratoru ilk konfigüre edilebilir ürünle açar.
+  // Localized so the dialog opens with TR strings when browsing in Turkish.
+  const flagship = getProduct("kart-100-mat-lam");
   const flagshipLocalized = flagship ? localizeProduct(flagship, locale) : null;
 
   return (

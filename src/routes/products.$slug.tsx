@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getProduct, products, localizeProduct, type Product } from "@/data/products";
 import { TopBar } from "@/components/TopBar";
 import { SiteNav } from "@/components/SiteNav";
@@ -59,6 +59,14 @@ function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const { addItem } = useCart();
+
+  // Deep-link: /products/<slug>?configure → konfigüratörü doğrudan açar.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("configure") !== null) {
+      setCustomizeOpen(true);
+    }
+  }, []);
 
   const related = products
     .filter((p) => p.slug !== product.slug)
