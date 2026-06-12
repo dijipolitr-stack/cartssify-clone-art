@@ -158,19 +158,70 @@ module RumicartsRender
       puts "[Hero] Çift tıkla → vray.exe tüm vrscene'leri PNG'ye render eder (gözetimsiz, SketchUp kapalı olabilir)."
     end
 
-    # ---- Çalıştır -----------------------------------------------------------
+    # ---- Sahnenin kamerasından V-Ray RenderView transform satırı üret -------
+    # DOĞRULANDI eşleme (2026-06-12): Matrix sütunları = camera.xaxis/yaxis/zaxis,
+    # konum = camera.eye (inç, V-Ray modeli inç yazar → birim dönüşümü YOK).
+    def self.cam_transform_line(scene_name)
+      cam = model.pages[scene_name].camera
+      x = cam.xaxis; y = cam.yaxis; z = cam.zaxis; e = cam.eye
+      "  transform=Transform(Matrix(" \
+        "Vector(#{x.x}, #{x.y}, #{x.z}), " \
+        "Vector(#{y.x}, #{y.y}, #{y.z}), " \
+        "Vector(#{z.x}, #{z.y}, #{z.z})), " \
+        "Vector(#{e.x.to_f}, #{e.y.to_f}, #{e.z.to_f}));"
+    end
+
+    RENDERVIEW_RE = /(RenderView\s+\w+\s*\{\s*\n)\s*transform=.*?;\n/m
+
+    # ---- Çalıştır (DETERMİNİSTİK kamera yazımı) -----------------------------
+    # SORUN (2026-06-12): döngüde set_camera + renderer.export, V-Ray çeviricinin
+    # kamerayı senkronlamaması yüzünden 7 dosyaya da SON kamerayı (ARKAKAPAK) yazıyordu.
+    # ÇÖZÜM: tek geometrili base export et, sonra her sahnenin RenderView transform'unu
+    # page.camera'dan hesaplayıp metinde değiştir. V-Ray zamanlamasına bağlı DEĞİL.
     def self.run
       require "fileutils"; FileUtils.mkdir_p(OUT_DIR)
-      @exported = []
-      puts "[Hero] #{SCENES.size} açı. Engine=#{ENGINE}, #{RES_W}x#{RES_H}. Çıktı: #{OUT_DIR}"
-      SCENES.each_with_index do |(scene, suffix), i|
-        set_camera(scene)
-        base = "rumicarts_hero_#{suffix}"
-        render_one(base)
-        puts "[#{i + 1}/#{SCENES.size}] #{base}  (sahne: #{scene})"
+      unless EXPORT_VRSCENE
+        puts "[Hero] EXPORT_VRSCENE=false → eski doğrudan-render yolu (önerilmez)."
+        @exported = []
+        SCENES.each { |scene, suffix| set_camera(scene); render_one("rumicarts_hero_#{suffix}") }
+        return
       end
-      write_bat if EXPORT_VRSCENE
-      puts "[Hero] ✓ Hazırlık bitti."
+      puts "[Hero] #{SCENES.size} açı. #{RES_W}x#{RES_H}. Çıktı: #{OUT_DIR}"
+
+      # 1) TEK base vrscene (geometri için; kamerası önemsiz, aşağıda değişecek)
+      base_path = File.join(OUT_DIR, "_base.vrscene")
+      set_camera(SCENES.keys.first)
+      renderer.export(base_path)
+      kb = (File.size(base_path) / 1024.0).round
+      if kb < 200
+        puts "  ⚠ base SADECE #{kb} KB → SOĞUK EXPORT (geometri yok)."
+        puts "    ÇÖZÜM: V-Ray Asset Editor > Settings > Engine = CPU yap, Render bas, araba görününce Stop,"
+        puts "    sonra Hero.run'ı TEKRAR çalıştır."
+        return
+      end
+      base = File.read(base_path)
+      unless base =~ RENDERVIEW_RE
+        puts "  ⚠ RenderView transform satırı bulunamadı — vrscene formatı beklenenden farklı, dur."
+        return
+      end
+      puts "  ✓ base #{kb} KB (geometri var). Kameralar deterministik yazılıyor..."
+
+      # 2) Her sahne için RenderView transform'unu kendi kamerasıyla yaz
+      @exported = []
+      SCENES.each_with_index do |(scene, suffix), i|
+        tline = cam_transform_line(scene)
+        out   = base.sub(RENDERVIEW_RE) { "#{$1}#{tline}\n" }
+        name  = "rumicarts_hero_#{suffix}"
+        File.write(File.join(OUT_DIR, "#{name}.vrscene"), out)
+        @exported << name
+        e = model.pages[scene].camera.eye
+        puts format("  [%d/%d] %-22s eye=(%.0f, %.0f, %.0f)", i + 1, SCENES.size, name, e.x.to_f, e.y.to_f, e.z.to_f)
+      end
+      File.delete(base_path) rescue nil
+
+      write_bat
+      puts "[Hero] ✓ Hazırlık bitti. 7 vrscene FARKLI kameralarla yazıldı."
+      puts "[Hero] Teyit: yukarıdaki eye değerleri 7 sahnede farklı olmalı. Sonra render_hero.bat çift tıkla."
     end
   end
 end
