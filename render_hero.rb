@@ -159,13 +159,15 @@ module RumicartsRender
     end
 
     # ---- Sahnenin kamerasından V-Ray RenderView transform satırı üret -------
-    # DOĞRULANDI eşleme (2026-06-12, render ile teyit): Matrix sütunları =
-    # camera.xaxis, camera.yaxis, camera.DIRECTION (=-zaxis, kameranın baktığı yön).
-    # DİKKAT: 3. sütun zaxis DEĞİL direction; zaxis kullanılırsa kamera ters bakar
-    # (araba karede çıkmaz, boş gri render). Konum = camera.eye (inç, dönüşüm YOK).
+    # DOĞRULANDI eşleme (2026-06-13, GERÇEK RENDER + ground truth ile teyit): Matrix
+    # sütunları = camera.xaxis, camera.yaxis, camera.ZAXIS (=-direction, kameradan geri).
+    # DİKKAT: 3. sütun direction DEĞİL zaxis. Ground truth = V-Ray'in kendi export ettiği
+    # test_on.vrscene (araba KAREDE); col0/col1/eye birebir aynı, col2 = ZAXIS (direction'ın
+    # negatifi). direction yazılırsa col2 ters işaretli olur → kamera arabanın TERSİNE bakar,
+    # boş gri oda render edilir (araba yok). Konum = camera.eye (inç, dönüşüm YOK).
     def self.cam_transform_line(scene_name)
       cam = model.pages[scene_name].camera
-      x = cam.xaxis; y = cam.yaxis; z = cam.direction; e = cam.eye
+      x = cam.xaxis; y = cam.yaxis; z = cam.zaxis; e = cam.eye
       "  transform=Transform(Matrix(" \
         "Vector(#{x.x}, #{x.y}, #{x.z}), " \
         "Vector(#{y.x}, #{y.y}, #{y.z}), " \
