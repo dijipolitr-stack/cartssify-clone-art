@@ -73,11 +73,42 @@ module RumicartsRender
       end
     end
 
-    # ---- Kamera: sahneyi etkinleştir (güvenilir SketchUp API) ---------------
+    # ---- Kamera teşhisi: sahnelerin GERÇEKTEN farklı açıları var mı? --------
+    # Render almadan önce çalıştır. Her sahnenin kamera konumunu (eye) yazar.
+    # eye değerleri birbirinden farklıysa → açılar farklı (script düzeltmesi yeter).
+    # Hepsi ~aynıysa → 3D'ci sahnelere ayrı kamera koymamış (modelde düzeltilmeli).
+    def self.check_cameras
+      SCENES.each_key do |scene|
+        page = model.pages[scene]
+        unless page
+          puts "  #{scene}: SAHNE YOK"
+          next
+        end
+        c = page.camera
+        eye = c.eye
+        puts format("  %-10s eye=(%.0f, %.0f, %.0f)  fov=%.1f", scene, eye.x, eye.y, eye.z, (c.perspective? ? c.fov : -1))
+      end
+    end
+
+    # ---- Kamera: sahneyi etkinleştir (ANİMASYONSUZ — kritik) ----------------
+    # DİKKAT (2026-06-12 düzeltme): model.pages.selected_page = page kamerayı
+    # ANİMASYONLA geçirir (tween). Döngüde hemen export edilince kamera daha
+    # hedefe oturmadan yakalanır → 7 sahne de ~ön açıdan render edilir (BUG).
+    # Çözüm: geçiş süresi 0 + kamerayı page.camera ile DOĞRUDAN ata (senkron, anında).
     def self.set_camera(scene_name)
       page = model.pages[scene_name]
       raise "Scene yok: '#{scene_name}'. Modeldeki adlar: #{model.pages.map(&:name).inspect}" unless page
+      # 1) Sahne geçiş animasyonunu kapat (varsa) — selected_page anında uygulansın
+      begin
+        opts = model.options["PageOptions"]
+        opts["ShowTransition"]   = false if opts.respond_to?(:[]) && opts["ShowTransition"]
+        opts["TransitionTime"]   = 0.0   if opts.respond_to?(:[])
+      rescue StandardError
+      end
+      # 2) Sahnenin tüm özelliklerini (stil/gölge/katman) yükle
       model.pages.selected_page = page
+      # 3) Kamerayı DOĞRUDAN ata → tween'i atla, export doğru açıyı yakalar
+      model.active_view.camera = page.camera if page.respond_to?(:camera) && page.camera
     end
 
     # ---- V-Ray render — DOĞRULANDI (discover + canlı test, 2026-06-11) -------
@@ -135,5 +166,7 @@ module RumicartsRender
   end
 end
 
-# Önce:  RumicartsRender::Hero.discover
-# Sonra: RumicartsRender::Hero.run
+# 1) Teşhis (kameralar farklı mı?):  RumicartsRender::Hero.check_cameras
+# 2) (opsiyonel) API keşfi:           RumicartsRender::Hero.discover
+# 3) Çalıştır (vrscene + .bat üret):  RumicartsRender::Hero.run
+#    → sonra C:\Users\kuruyemis\Desktop\renders\render_hero.bat çift tıkla.
