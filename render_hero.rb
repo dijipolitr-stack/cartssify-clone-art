@@ -117,6 +117,15 @@ module RumicartsRender
         path = File.join(OUT_DIR, "#{basename}.vrscene")
         renderer.export(path)   # DOĞRULANDI: renderer.export(yol) → .vrscene yazar (nil döner, dosya oluşur)
         @exported << basename
+        # Boyut kontrolü: geometri varsa MB'lar olur (~6MB). KB ise SOĞUK EXPORT
+        # (sahne translate edilmemiş) → V-Ray'i bir kez render edip durdur, tekrar dene.
+        kb = (File.size(path) / 1024.0).round
+        if kb < 200
+          puts "  ⚠ #{basename}.vrscene SADECE #{kb} KB → GEOMETRİ YOK (soğuk export)."
+          puts "    ÇÖZÜM: V-Ray Render düğmesine bas, araba görününce Stop, sonra Hero.run'ı TEKRAR çalıştır."
+        else
+          puts "  ✓ #{basename}.vrscene #{kb} KB"
+        end
       else
         # Doğrudan SketchUp içi render. DİKKAT: renderer.start ASENKRON döner
         # (render arka planda sürer) → save_vfb_image render bitmeden kaydedebilir.
