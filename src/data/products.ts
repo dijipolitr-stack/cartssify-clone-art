@@ -1,10 +1,4 @@
-import {
-  ANGLES,
-  CONFIG_PRODUCTS,
-  formatPrice,
-  type AngleId,
-} from "@/data/configurator";
-import { cartPreviewSvg, svgToDataUri } from "@/lib/cart-preview";
+import { CONFIG_PRODUCTS, formatPrice } from "@/data/configurator";
 
 export type Product = {
   slug: string;
@@ -29,26 +23,20 @@ export type Product = {
 };
 
 // --------------------------------------------------------------------------
-// Placeholder katalog görselleri — tam donanımlı (showcase) konfigürasyonun
-// şematik SVG'si. Gerçek V-Ray render'ları gelince (RENDER_BRIEF.md Faz 1)
-// bu görseller gerçek PNG'lerle değiştirilir.
+// Katalog görselleri — GERÇEK V-Ray hero render'ları (2026-06-13, 7 açı).
+// Dekorlu showroom sahnesinden alındı, 2000px → public/renders/hero-{açı}.webp.
+// 4 ürün şimdilik aynı hero setini paylaşır: tek beyaz araba render edildi;
+// boyut/yüzey varyantına özel render'lar (konfigüratör grid'i) ayrı bir iş.
 // --------------------------------------------------------------------------
-const SHOWCASE = {
-  bodyHex: "#f3f1ec", // Beyaz gövde
-  tente: true,
-  tenteHex: "#f3f1ec", // Beyaz tente
-  wheelsDecorative: true,
-  shelf: true, // Raflı
-  backCover: true, // Arka kapaklı
-  metalHex: "#c9ccd1", // Krom
-} as const;
-
-function showcaseImage(angle: AngleId): string {
-  return svgToDataUri(cartPreviewSvg({ angle, ...SHOWCASE }));
-}
-
-const heroImage = showcaseImage("on");
-const galleryImages = ANGLES.filter((a) => a.id !== "on").map((a) => showcaseImage(a.id));
+const heroImage = "/renders/hero-on.webp";
+const galleryImages = [
+  "on-sag",
+  "on-sol",
+  "arka",
+  "arka-sag",
+  "arka-sol",
+  "arka-kapak",
+].map((a) => `/renders/hero-${a}.webp`);
 
 const baseFeatures = [
   "Tek araçta 7 kriterle özelleştir — gövde/tente/metal rengi, tekerlek, raf, arka kapak",
