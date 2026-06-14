@@ -79,19 +79,12 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     : "saturate(0.9) contrast(0.96) brightness(1.04)";
 
   // Kumaş Tente "Yok": üst yapıyı (kumaş tente + taşıyıcı direkler) önizlemeden
-  // gizle — gerçek render tek konfigürasyon olduğu için tezgah üstünü yatay bir
-  // gradient maskeyle keseriz. Görsel kare + object-contain olduğundan kesim
-  // yüzdesi doğrudan eşler; değerler her açının tezgah-üstü Y'sinden ölçüldü.
-  const TENTE_CUT: Record<AngleId, number> = {
-    on: 57,
-    "on-sag": 57,
-    "on-sol": 56,
-    arka: 58,
-    "arka-sag": 57,
-    "arka-sol": 57,
-  };
+  // gizle. Gerçek render tek konfigürasyon olduğu için, geometriyi takip eden
+  // hazır "gövde maskesi" (mask-notente-{açı}.png) ile yalnız kutu+tekerlek
+  // gösterilir — kutu/tezgah üstü tam kalır, kırpılmaz. Maske geometri olduğundan
+  // tüm renklerde ortaktır.
   const tenteCutMask = !tenteOn
-    ? `linear-gradient(to bottom, transparent ${TENTE_CUT[angle] - 1}%, #000 ${TENTE_CUT[angle] + 1}%)`
+    ? `url(/renders/mask-notente-${angle}.png)`
     : undefined;
 
   // Aktif açıda gösterilecek logo overlay'leri.
@@ -366,6 +359,12 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                     filter: previewFilter,
                     WebkitMaskImage: tenteCutMask,
                     maskImage: tenteCutMask,
+                    WebkitMaskSize: "contain",
+                    maskSize: "contain",
+                    WebkitMaskPosition: "center",
+                    maskPosition: "center",
+                    WebkitMaskRepeat: "no-repeat",
+                    maskRepeat: "no-repeat",
                   }}
                 />
                 {/* Logo overlay'leri */}
