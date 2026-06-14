@@ -78,6 +78,22 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     ? "saturate(1.16) contrast(1.1) brightness(0.99)"
     : "saturate(0.9) contrast(0.96) brightness(1.04)";
 
+  // Kumaş Tente "Yok": üst yapıyı (kumaş tente + taşıyıcı direkler) önizlemeden
+  // gizle — gerçek render tek konfigürasyon olduğu için tezgah üstünü yatay bir
+  // gradient maskeyle keseriz. Görsel kare + object-contain olduğundan kesim
+  // yüzdesi doğrudan eşler; değerler her açının tezgah-üstü Y'sinden ölçüldü.
+  const TENTE_CUT: Record<AngleId, number> = {
+    on: 57,
+    "on-sag": 57,
+    "on-sol": 56,
+    arka: 58,
+    "arka-sag": 57,
+    "arka-sol": 57,
+  };
+  const tenteCutMask = !tenteOn
+    ? `linear-gradient(to bottom, transparent ${TENTE_CUT[angle] - 1}%, #000 ${TENTE_CUT[angle] + 1}%)`
+    : undefined;
+
   // Aktif açıda gösterilecek logo overlay'leri.
   const activeLogoSurfaces = MOCKUP_SURFACES.filter(
     (s) =>
@@ -346,7 +362,11 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                   src={previewSrc}
                   alt={`${pick(getConfigProduct(productId).label, locale)} — ${angle}`}
                   className="absolute inset-0 w-full h-full object-contain pointer-events-none transition-[filter] duration-300"
-                  style={{ filter: previewFilter }}
+                  style={{
+                    filter: previewFilter,
+                    WebkitMaskImage: tenteCutMask,
+                    maskImage: tenteCutMask,
+                  }}
                 />
                 {/* Logo overlay'leri */}
                 {activeLogoSurfaces.map((s) => (
