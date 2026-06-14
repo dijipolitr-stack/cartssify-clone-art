@@ -70,11 +70,13 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     ? `/renders/hero-${colorId}-${angle}.webp`
     : `/renders/hero-${angle}.webp`;
 
-  // Mat/Lake farkı: gerçek render tek set olduğu için parlak lake seçimini
-  // CSS ile simüle ederiz — gövde silüetine maskelenmiş diagonal parlaklık
-  // hüzmesi + hafif kontrast/doygunluk (mat'ta efekt yok). Maske previewSrc'in
-  // alpha'sı olduğundan sadece arabaya biner, fona taşmaz.
+  // Mat/Lake farkı: gerçek render tek set olduğu için malzeme hissini sadece
+  // renk derinliğiyle veririz (eklenen ışık/hüzme YOK — yapay duruyordu).
+  // Lake = daha doygun/kontrastlı/derin (vernik), Mat = daha düz/mat.
   const isLake = getConfigProduct(productId).finish === "lake";
+  const previewFilter = isLake
+    ? "saturate(1.16) contrast(1.1) brightness(0.99)"
+    : "saturate(0.9) contrast(0.96) brightness(1.04)";
 
   // Aktif açıda gösterilecek logo overlay'leri.
   const activeLogoSurfaces = MOCKUP_SURFACES.filter(
@@ -343,33 +345,9 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                 <img
                   src={previewSrc}
                   alt={`${pick(getConfigProduct(productId).label, locale)} — ${angle}`}
-                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-                  style={
-                    isLake
-                      ? { filter: "contrast(1.09) saturate(1.18) brightness(1.02)" }
-                      : undefined
-                  }
+                  className="absolute inset-0 w-full h-full object-contain pointer-events-none transition-[filter] duration-300"
+                  style={{ filter: previewFilter }}
                 />
-                {/* Parlak lake: gövdeye maskelenmiş diagonal parlaklık hüzmesi */}
-                {isLake && (
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 w-full h-full pointer-events-none"
-                    style={{
-                      backgroundImage:
-                        "linear-gradient(118deg, transparent 28%, rgba(255,255,255,0.10) 40%, rgba(255,255,255,0.55) 48%, rgba(255,255,255,0.12) 56%, transparent 70%)",
-                      WebkitMaskImage: `url(${previewSrc})`,
-                      maskImage: `url(${previewSrc})`,
-                      WebkitMaskSize: "contain",
-                      maskSize: "contain",
-                      WebkitMaskRepeat: "no-repeat",
-                      maskRepeat: "no-repeat",
-                      WebkitMaskPosition: "center",
-                      maskPosition: "center",
-                      mixBlendMode: "screen",
-                    }}
-                  />
-                )}
                 {/* Logo overlay'leri */}
                 {activeLogoSurfaces.map((s) => (
                   <img
