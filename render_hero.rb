@@ -37,6 +37,20 @@ module RumicartsRender
       "ARKAKAPAK" => "arka-kapak",
     }
 
+    # ---- HEDEFLİ RENK ÇEKİMİ (gövde varyantları) ----------------------------
+    # Gövde materyali keşfedildi: "Color M00" (beyaz düz renk, doku yok).
+    # configurator.ts'teki gövde renk hex'leriyle birebir (özel hariç).
+    BODY_MATERIAL = "Color M00"
+    BODY_COLORS = {
+      "beyaz"   => [243, 241, 236],   # #f3f1ec (render'da zaten var = referans)
+      "siyah"   => [31, 31, 31],      # #1f1f1f
+      "yesil"   => [93, 106, 58],     # #5d6a3a
+      "mavi"    => [52, 86, 127],     # #34567f
+      "kirmizi" => [176, 58, 46],     # #b03a2e
+    }
+    # Render alınacak varyantlar (beyaz zaten elde var → tekrar render gerekmez)
+    COLOR_VARIANTS = %w[siyah yesil mavi kirmizi]
+
     def self.model; Sketchup.active_model; end
     def self.renderer; VRay::Context.active.renderer; end
 
@@ -88,6 +102,101 @@ module RumicartsRender
         eye = c.eye
         puts format("  %-10s eye=(%.0f, %.0f, %.0f)  fov=%.1f", scene, eye.x, eye.y, eye.z, (c.perspective? ? c.fov : -1))
       end
+    end
+
+    # ---- Gövde materyali keşfi (HEDEFLİ RENK ÇEKİMİ için) -------------------
+    # AMAÇ: gövde panelini hangi materyalin boyadığını bulmak. Renk varyantı
+    # render'ları için (siyah/yeşil/mavi/kırmızı) o materyalin diffuse rengini
+    # döngüyle değiştireceğiz. KULLANIM: SketchUp'ta gövde panelini (büyük beyaz
+    # kutu yüzeyi) TIKLA → Ruby Console'da: RumicartsRender::Hero.body_material
+    def self.body_material
+      sel = model.selection
+      puts "== SEÇİLİ ÖĞELERİN MATERYALİ (gövde panelini seçtiysen burada görünür) =="
+      if sel.empty?
+        puts "  (seçim boş — gövde yüzeyine tıkla, sonra tekrar çalıştır)"
+      end
+      sel.each do |e|
+        nm = e.respond_to?(:material) && e.material ? e.material.display_name : "nil"
+        extra = ""
+        if e.is_a?(Sketchup::Face)
+          bm = e.back_material ? e.back_material.display_name : "nil"
+          extra = "  back=#{bm}"
+        end
+        puts "  #{e.class.name.split('::').last}: front=#{nm}#{extra}"
+      end
+      puts "== MODELDEKİ TÜM MATERYALLER (ad + SketchUp diffuse rengi) =="
+      model.materials.each do |m|
+        c = (m.color.to_a rescue "?")
+        tex = (m.texture ? "TEXTURE(#{File.basename(m.texture.filename.to_s)})" : "düz renk")
+        puts "  #{m.display_name.inspect}  rgb=#{c}  #{tex}"
+      end
+      puts "TOPLAM #{model.materials.size} materyal."
+      puts "→ Gövde materyalinin adını Claude'a söyle; renk varyantı script'i ona göre yazılacak."
+    end
+
+    # ---- Gövde rengini ayarla (TEST + run_colors içinde kullanılır) ---------
+    # KULLANIM (yansıma testi): RumicartsRender::Hero.set_body_color("kirmizi")
+    # → sonra V-Ray Render'a bas. Gövde kırmızı çıkarsa SketchUp rengi V-Ray'e
+    # yansıyor demektir → run_colors çalışır. Beyaz kalırsa V-Ray Asset Editor
+    # materyali override ediyordur → renk V-Ray API'siyle değiştirilmeli (Claude'a söyle).
+    def self.set_body_color(name)
+      rgb = BODY_COLORS[name] or raise "Bilinmeyen renk: #{name.inspect}. Geçerli: #{BODY_COLORS.keys.inspect}"
+      m = model.materials[BODY_MATERIAL] or raise "Materyal yok: #{BODY_MATERIAL.inspect}"
+      m.color = Sketchup::Color.new(*rgb)
+      model.active_view.refresh rescue nil
+      puts "Gövde ('#{BODY_MATERIAL}') → '#{name}' #{rgb} yapıldı."
+      puts "V-Ray Render'a bas; gövde bu renk mi kontrol et. Beyaza dön: Hero.set_body_color('beyaz')"
+    end
+
+    # ---- 4 RENK × 6 AÇI = 24 varyant render (deterministik kamera) ----------
+    # ÖN KOŞUL: sahne ısınmış olmalı (önce V-Ray Render bas → araba görününce Stop;
+    # bkz. run'daki soğuk-export notu). set_body_color yansıma testi GEÇMİŞ olmalı.
+    # Her renk için: materyali boya → base vrscene export (geometri+renk) → 6 sahnenin
+    # kamerasını metinde yaz. Sonra renders\render_colors.bat üretir.
+    def self.run_colors
+      require "fileutils"; FileUtils.mkdir_p(OUT_DIR)
+      puts "[Renk] #{COLOR_VARIANTS.size} renk × #{SCENES.size} açı = #{COLOR_VARIANTS.size * SCENES.size} render."
+      set_camera(SCENES.keys.first)  # geometri için kamera kur (kamerası önemsiz)
+      exported = []
+      COLOR_VARIANTS.each do |cname|
+        set_body_color(cname)
+        base_path = File.join(OUT_DIR, "_base_#{cname}.vrscene")
+        renderer.export(base_path)
+        kb = (File.size(base_path) / 1024.0).round
+        if kb < 200
+          puts "  ⚠ #{cname} base #{kb} KB → SOĞUK EXPORT (geometri yok). Sahneyi ısıt (Render→Stop), tekrar dene."
+          set_body_color("beyaz"); return
+        end
+        base = File.read(base_path)
+        unless base =~ RENDERVIEW_RE
+          puts "  ⚠ RenderView bulunamadı — dur."; set_body_color("beyaz"); return
+        end
+        SCENES.each do |scene, suffix|
+          next if scene == "ARKAKAPAK"  # konfigüratörde arka-kapak açısı yok (AngleId 6 açı)
+          tline = cam_transform_line(scene)
+          out = base.sub(RENDERVIEW_RE) { "#{$1}#{tline}\n" }
+          name = "rumicarts_hero_#{cname}_#{suffix}"
+          File.write(File.join(OUT_DIR, "#{name}.vrscene"), out)
+          exported << name
+        end
+        File.delete(base_path) rescue nil
+        puts "  ✓ #{cname}: #{SCENES.size - 1} açı vrscene yazıldı (#{kb} KB base)."
+      end
+      set_body_color("beyaz")  # modeli orijinal beyaza döndür
+      # .bat üret
+      eng = (ENGINE == :gpu ? "-rtEngine=5 -rtNoise=0.01" : "")
+      lines = ["@echo off", "setlocal"]
+      exported.each do |b|
+        vs  = File.join(OUT_DIR, "#{b}.vrscene").tr("/", "\\")
+        png = File.join(OUT_DIR, "#{b}.png").tr("/", "\\")
+        lines << %Q{echo Rendering #{b} ...}
+        lines << %Q{"#{VRAY_EXE}" -sceneFile="#{vs}" -imgFile="#{png}" -imgWidth=#{RES_W} -imgHeight=#{RES_H} -display=0 #{eng}}
+      end
+      lines << "echo BITTI. #{exported.size} renk-varyant render."
+      bat = File.join(OUT_DIR, "render_colors.bat")
+      File.write(bat, lines.join("\r\n"))
+      puts "[Renk] ✓ #{exported.size} vrscene yazıldı. .bat: #{bat}"
+      puts "[Renk] render_colors.bat çift tıkla → #{exported.size} PNG (gözetimsiz)."
     end
 
     # ---- Kamera: sahneyi etkinleştir (ANİMASYONSUZ — kritik) ----------------

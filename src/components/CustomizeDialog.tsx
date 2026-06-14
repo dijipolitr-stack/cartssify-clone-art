@@ -17,13 +17,11 @@ import {
   getOption,
   isCriterionActive,
   pick,
-  realRender,
   type AngleId,
   type ConfigProductId,
   type CriterionId,
   type Selection,
 } from "@/data/configurator";
-import { cartPreviewSvg, svgToDataUri } from "@/lib/cart-preview";
 
 type Props = {
   product: Product;
@@ -31,7 +29,9 @@ type Props = {
   onOpenChange: (open: boolean) => void;
 };
 
-const NEUTRAL = "#c8c3ba"; // "Özel" / hex'siz seçimler için nötr placeholder rengi
+// Gerçek renkli render seti olan gövde renkleri (beyaz fabrika render'ı + bu 4).
+// "ozel" ve hex'siz seçimlerde fabrika beyazı gösterilir.
+const COLOR_RENDER_IDS = new Set(["siyah", "yesil", "mavi", "kirmizi"]);
 
 export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   const { locale } = useI18n();
@@ -60,25 +60,15 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   );
 
   // --- Önizleme görseli -------------------------------------------------
-  // İleride: katmanlı gerçek render kompozisyonu (RENDER_REGISTRY). Registry
-  // boşken seçimleri yansıtan şematik SVG kullanılır.
-  const previewSrc = useMemo(() => {
-    const heroReal = realRender(productId, angle, "hero");
-    if (heroReal) return heroReal; // Faz 1 gerçek render mevcutsa kullan
-    const hex = (id: CriterionId) => getOption(id, selection[id])?.hex ?? NEUTRAL;
-    return svgToDataUri(
-      cartPreviewSvg({
-        angle,
-        bodyHex: hex("govdeRengi"),
-        tente: tenteOn,
-        tenteHex: hex("tenteRengi"),
-        wheelsDecorative: selection.dekoratifTekerlek === "var",
-        shelf: selection.tutamacRaf === "raf",
-        backCover: selection.arkaKapak === "var",
-        metalHex: hex("metalRengi"),
-      }),
-    );
-  }, [productId, angle, selection, tenteOn]);
+  // Gövde rengine göre GERÇEK renkli V-Ray render'ı (beyaz + siyah/yeşil/mavi/
+  // kırmızı, 6 açı). Gövde ve tente tek materyal olduğu için bu render'larda
+  // ikisi birlikte renklidir. Metal rengi ve yapısal seçimler (tente var/yok,
+  // raf, arka kapak, tekerlek) render'da sabittir; sipariş notuna + seçim
+  // panelindeki etikete yansır.
+  const colorId = selection.govdeRengi;
+  const previewSrc = COLOR_RENDER_IDS.has(colorId)
+    ? `/renders/hero-${colorId}-${angle}.webp`
+    : `/renders/hero-${angle}.webp`;
 
   // Aktif açıda gösterilecek logo overlay'leri.
   const activeLogoSurfaces = MOCKUP_SURFACES.filter(

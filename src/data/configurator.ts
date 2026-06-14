@@ -122,7 +122,6 @@ export type OptionValue = {
 export type CriterionId =
   | "govdeRengi"
   | "kumasTente"
-  | "tenteRengi"
   | "dekoratifTekerlek"
   | "tutamacRaf"
   | "arkaKapak"
@@ -149,9 +148,8 @@ const COLOR_VALUES: OptionValue[] = [
   { id: "ozel", label: { tr: "Özel", en: "Custom" }, priceDelta: 150, isCustom: true }, // PLACEHOLDER
 ];
 
-// Renk listesi gövde ve tente için ayrı kopyalanır (referans paylaşımı sorun çıkarmasın).
+// Gövde (+ tente, tek materyal) renk listesi — referans paylaşımı sorun çıkarmasın diye kopya.
 const bodyColors = COLOR_VALUES.map((v) => ({ ...v }));
-const tenteColors = COLOR_VALUES.map((v) => ({ ...v }));
 
 const METAL_VALUES: OptionValue[] = [
   { id: "krom", label: { tr: "Krom", en: "Chrome" }, priceDelta: 0, hex: "#c9ccd1" },
@@ -164,7 +162,9 @@ const METAL_VALUES: OptionValue[] = [
 export const CRITERIA: Criterion[] = [
   {
     id: "govdeRengi",
-    label: { tr: "Gövde Rengi", en: "Body Color" },
+    // Gövde ve tente modelde tek materyal (Color M00) → tek renk seçimi ikisini de
+    // kapsar; gerçek render'lar da gövde+tente birlikte renkli üretildi.
+    label: { tr: "Gövde + Tente Rengi", en: "Body + Awning Color" },
     control: "swatch",
     layer: "govde",
     values: bodyColors,
@@ -178,14 +178,6 @@ export const CRITERIA: Criterion[] = [
       { id: "yok", label: { tr: "Yok", en: "None" }, priceDelta: 0, isNone: true },
       { id: "var", label: { tr: "Var", en: "Yes" }, priceDelta: 250 }, // PLACEHOLDER
     ],
-  },
-  {
-    id: "tenteRengi",
-    label: { tr: "Tente Rengi", en: "Awning Color" },
-    control: "swatch",
-    layer: "tente",
-    values: tenteColors,
-    dependsOn: { criterion: "kumasTente", value: "var" },
   },
   {
     id: "dekoratifTekerlek",
@@ -372,7 +364,7 @@ export const CONFIG_UI: Record<Locale, {
     total: "Toplam",
     addToCart: "Sepete ekle",
     leadTime: "Üretim genellikle 2–3 hafta sürer. Dünya geneli kargo.",
-    placeholderNote: "Önizleme şematiktir — gerçek render'lar hazırlanıyor.",
+    placeholderNote: "Gövde + tente rengi önizlemede gösterilir. Metal rengi ve yapısal seçimler siparişe yansır.",
     yok: "Yok",
     varText: "Var",
   },
@@ -394,7 +386,7 @@ export const CONFIG_UI: Record<Locale, {
     total: "Total",
     addToCart: "Add to cart",
     leadTime: "Production usually takes 2–3 weeks. Worldwide shipping.",
-    placeholderNote: "Preview is schematic — real renders are in production.",
+    placeholderNote: "Body + awning color is shown in the preview. Metal color and structural options are applied to your order.",
     yok: "None",
     varText: "Yes",
   },
