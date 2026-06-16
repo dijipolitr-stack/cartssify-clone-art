@@ -139,9 +139,19 @@ module RumicartsRender
     # → sonra V-Ray Render'a bas. Gövde kırmızı çıkarsa SketchUp rengi V-Ray'e
     # yansıyor demektir → run_colors çalışır. Beyaz kalırsa V-Ray Asset Editor
     # materyali override ediyordur → renk V-Ray API'siyle değiştirilmeli (Claude'a söyle).
+    # Gövde materyalini esnek bul: "Color M00" ve "[Color M00]" ikisini de yakalar
+    # (crash sonrası açılan modellerde ad köşeli parantezli gelebiliyor).
+    def self.body_material
+      bare = BODY_MATERIAL.gsub(/[\[\]]/, "")
+      model.materials[BODY_MATERIAL] ||
+        model.materials["[#{bare}]"] ||
+        model.materials[bare] ||
+        model.materials.find { |mt| mt.name.gsub(/[\[\]]/, "") == bare }
+    end
+
     def self.set_body_color(name)
       rgb = BODY_COLORS[name] or raise "Bilinmeyen renk: #{name.inspect}. Geçerli: #{BODY_COLORS.keys.inspect}"
-      m = model.materials[BODY_MATERIAL] or raise "Materyal yok: #{BODY_MATERIAL.inspect}"
+      m = body_material or raise "Materyal yok: #{BODY_MATERIAL.inspect}. Modelde: #{model.materials.map(&:name).inspect}"
       m.color = Sketchup::Color.new(*rgb)
       model.active_view.refresh rescue nil
       puts "Gövde ('#{BODY_MATERIAL}') → '#{name}' #{rgb} yapıldı."
@@ -197,6 +207,100 @@ module RumicartsRender
       File.write(bat, lines.join("\r\n"))
       puts "[Renk] ✓ #{exported.size} vrscene yazıldı. .bat: #{bat}"
       puts "[Renk] render_colors.bat çift tıkla → #{exported.size} PNG (gözetimsiz)."
+    end
+
+    # ---- TEKERLEK-YOK render seti (DekorTekerlek tag'i gizli) ---------------
+    # ÖN KOŞUL (SketchUp'ta bir kez): dekoratif tekerlek + çamurluk bir "DekorTekerlek"
+    # tag'ine atanmış olmalı. Tag göz ikonu kapanınca SADECE tekerlek+çamurluk kaybolmalı.
+    #
+    # Tekerlek M00 (gövde rengi) materyaliyle boyandığı için renk başına ayrı render
+    # gerekir → 5 renk × 6 açı = 30 kare (run_colors'ın tekerlek-yok ikizi).
+    #
+    # KULLANIM:
+    #   1) Hero.teker_off            → tag'i gizler (ekranda tekerlek kaybolur)
+    #   2) V-Ray Render bas → tekerleksiz araba görününce Stop  (sahneyi ISIT)
+    #   3) Hero.run_tekeryok(test: true)  → TEK kare (beyaz, ON) vrscene + test .bat
+    #      render_tekeryok_test.bat çift tıkla → 1 PNG → Claude'a gönder (temiz mi?)
+    #   4) Temizse: Hero.run_tekeryok      → 30 kare vrscene + render_tekeryok.bat
+    #   5) Bitince Hero.teker_on    → tekerleği geri getir (modeli bozma)
+    TEKER_TAG = "DekorTekerlek"
+
+    def self.tag(name)
+      (model.layers[name] rescue nil) || (model.tags[name] rescue nil)
+    end
+
+    def self.set_tag_visible(name, vis)
+      lyr = tag(name) or raise "Tag yok: '#{name}'. SketchUp'ta tekerlek+çamurluğu bu tag'e ata."
+      lyr.visible = vis
+      model.active_view.refresh rescue nil
+    end
+
+    def self.teker_off
+      set_tag_visible(TEKER_TAG, false)
+      puts "[TekerYok] '#{TEKER_TAG}' gizlendi — ekranda tekerlek+çamurluk kayboldu mu bak."
+      puts "[TekerYok] ŞİMDİ: V-Ray Render bas → tekerleksiz araba görününce Stop (ISIT) → Hero.run_tekeryok(test: true)"
+    end
+
+    def self.teker_on
+      set_tag_visible(TEKER_TAG, true)
+      set_body_color("beyaz") rescue nil
+      puts "[TekerYok] '#{TEKER_TAG}' geri açıldı + gövde beyaza döndü. Model orijinal halinde."
+    end
+
+    # Tekerlek-yok BEYAZ base seti: tekerlek tag'i gizli + gövde beyaz iken her açı için
+    # tek vrscene export et (kamera metinde değiştirilir). RENK BURADA ÜRETİLMEZ —
+    # set_body_color V-Ray'e yansımadığı için (kanıtlanmış) renkler Python vrscene
+    # diffuse-replace ile üretilir (renk render pipeline'ıyla aynı). Bu metod sadece
+    # geometri+kamera'sı doğru 6 beyaz vrscene verir; Claude onları 5 renge çoğaltır.
+    def self.run_tekeryok(test: false)
+      require "fileutils"; FileUtils.mkdir_p(OUT_DIR)
+      set_tag_visible(TEKER_TAG, false)        # tekerlek gizli
+      set_body_color("beyaz") rescue nil       # base beyaz (renk Python tarafında)
+      scenes = test ? { "ON" => "on" } : SCENES.reject { |s, _| s == "ARKAKAPAK" }
+      puts "[TekerYok] #{scenes.size} açı BEYAZ base export#{test ? ' (TEST)' : ''}. Renkler sonra Python ile üretilir."
+      set_camera(SCENES.keys.first)
+      base_path = File.join(OUT_DIR, "_base_tekeryok.vrscene")
+      renderer.export(base_path)
+      kb = (File.size(base_path) / 1024.0).round
+      if kb < 200
+        puts "  ⚠ base #{kb} KB → SOĞUK EXPORT (geometri yok)."
+        puts "    Tekerlek GİZLİYKEN sahneyi ısıt: V-Ray Render bas → tekerleksiz araba görününce Stop,"
+        puts "    sonra Hero.run_tekeryok#{test ? '(test: true)' : ''} TEKRAR. (Tag gizli bırakıldı, teker_on YAPMA.)"
+        return
+      end
+      base = File.read(base_path)
+      unless base =~ RENDERVIEW_RE
+        puts "  ⚠ RenderView bulunamadı — dur."; return
+      end
+      exported = []
+      scenes.each do |scene, suffix|
+        tline = cam_transform_line(scene)
+        out   = base.sub(RENDERVIEW_RE) { "#{$1}#{tline}\n" }
+        name  = "rumicarts_hero_#{suffix}_tekeryok"     # beyaz base (renksiz, açı başına 1)
+        File.write(File.join(OUT_DIR, "#{name}.vrscene"), out)
+        exported << name
+      end
+      File.delete(base_path) rescue nil
+      # beyaz .bat (geometri/açı kontrolü için — test'te tek kare, tam sette 6 açı önizleme)
+      eng = (ENGINE == :gpu ? "-rtEngine=5 -rtNoise=0.01" : "")
+      lines = ["@echo off", "setlocal"]
+      exported.each do |b|
+        vs  = File.join(OUT_DIR, "#{b}.vrscene").tr("/", "\\")
+        png = File.join(OUT_DIR, "#{b}.png").tr("/", "\\")
+        lines << %Q{echo Rendering #{b} ...}
+        lines << %Q{"#{VRAY_EXE}" -sceneFile="#{vs}" -imgFile="#{png}" -imgWidth=#{RES_W} -imgHeight=#{RES_H} -display=0 #{eng}}
+      end
+      lines << "echo BITTI. #{exported.size} beyaz tekerlek-yok render."
+      bat = File.join(OUT_DIR, test ? "render_tekeryok_test.bat" : "render_tekeryok_beyaz.bat")
+      File.write(bat, lines.join("\r\n"))
+      puts "[TekerYok] ✓ #{exported.size} BEYAZ vrscene yazıldı (#{kb} KB base). .bat: #{bat}"
+      if test
+        puts "[TekerYok] TEST: render_tekeryok_test.bat çift tıkla → 1 PNG → Claude'a gönder."
+      else
+        puts "[TekerYok] ŞİMDİ: Claude'a haber ver → 6 vrscene'i Python ile 5 renge çoğaltıp"
+        puts "[TekerYok] 30 kare render_tekeryok_renkli.bat hazırlayacak. (Tekerlek tag'i gizli BIRAK,"
+        puts "[TekerYok]  render bitince Hero.teker_on ile geri getir.)"
+      end
     end
 
     # ---- Kamera: sahneyi etkinleştir (ANİMASYONSUZ — kritik) ----------------
@@ -343,3 +447,10 @@ end
 # 2) (opsiyonel) API keşfi:           RumicartsRender::Hero.discover
 # 3) Çalıştır (vrscene + .bat üret):  RumicartsRender::Hero.run
 #    → sonra C:\Users\kuruyemis\Desktop\renders\render_hero.bat çift tıkla.
+#
+# TEKERLEK-YOK seti (DekorTekerlek tag'i SketchUp'ta hazır olmalı):
+#   a) RumicartsRender::Hero.teker_off            → tekerlek+çamurluğu gizle
+#   b) V-Ray Render bas → tekerleksiz araba görününce Stop (sahneyi ısıt)
+#   c) RumicartsRender::Hero.run_tekeryok(test: true)  → 1 test karesi → render_tekeryok_test.bat
+#   d) Temizse: RumicartsRender::Hero.run_tekeryok     → 30 kare → render_tekeryok.bat
+#   e) RumicartsRender::Hero.teker_on             → tekerleği geri getir (gerekirse)

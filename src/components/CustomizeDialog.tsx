@@ -66,9 +66,14 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   // raf, arka kapak, tekerlek) render'da sabittir; sipariş notuna + seçim
   // panelindeki etikete yansır.
   const colorId = selection.govdeRengi;
+  // Dekoratif Tekerlek "Yok" (varsayılan): büyük yan tekerlekler olmadan, ayrı
+  // çekilmiş gerçek render seti (-tekeryok, 5 renk × 6 açı). "Var": mevcut
+  // tekerlekli set. Her iki set de aynı 6 açıyı kapsar; alt yürütme tekerlekleri
+  // (caster) iki sette de durur.
+  const tekerSuffix = selection.dekoratifTekerlek === "yok" ? "-tekeryok" : "";
   const previewSrc = COLOR_RENDER_IDS.has(colorId)
-    ? `/renders/hero-${colorId}-${angle}.webp`
-    : `/renders/hero-${angle}.webp`;
+    ? `/renders/hero-${colorId}-${angle}${tekerSuffix}.webp`
+    : `/renders/hero-${angle}${tekerSuffix}.webp`;
 
   // Mat/Lake farkı: gerçek render tek set olduğu için malzeme hissini sadece
   // renk derinliğiyle veririz (eklenen ışık/hüzme YOK — yapay duruyordu).
