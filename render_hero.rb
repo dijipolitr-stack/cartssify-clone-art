@@ -303,6 +303,98 @@ module RumicartsRender
       end
     end
 
+    # ---- TENTE-YOK + KOMBİNASYON render seti (genel varyant) ----------------
+    # ÖN KOŞUL (SketchUp'ta bir kez): kumaş tente + taşıyıcı direkler bir
+    # "KumasTente" tag'ine atanmış olmalı (tekerlek için "DekorTekerlek" gibi).
+    # Tag göz ikonu kapanınca SADECE tente+direkler kaybolmalı; kutu/tezgah kalmalı.
+    #
+    # Bu metod, run_tekeryok'un GENEL halidir: hangi tag'leri gizleyeceğini ve
+    # dosya sonekini parametre alır. Gizlenmeyen varyant tag'leri otomatik GÖRÜNÜR
+    # yapılır (temiz durum). Gövde beyaz base export edilir; renkler sonra Python
+    # diffuse-replace ile (renk pipeline'ıyla aynı) 5 renge çoğaltılır.
+    #
+    # VARYANT TAG'LERİ — önizlemeyi etkileyen geometri eksenleri:
+    VARIANT_TAGS = ["DekorTekerlek", "KumasTente"]
+    #
+    # KULLANIM (her komutu sırayla; her biri 6 beyaz base verir):
+    #   A) Tente YOK (tekerlek VAR):
+    #      1) Hero.set_variant_tags(hide: ["KumasTente"])   → tente gizli, tekerlek görünür
+    #      2) V-Ray Render bas → araba tentesiz görününce Stop (sahneyi ISIT)
+    #      3) Hero.run_variant(suffix: "-tenteyok", hide: ["KumasTente"], test: true) → 1 test
+    #         render-tenteyok_test.bat çift tıkla → 1 PNG → Claude'a gönder (temiz mi?)
+    #      4) Temizse: Hero.run_variant(suffix: "-tenteyok", hide: ["KumasTente"])
+    #   B) Tente YOK + Tekerlek YOK:
+    #      1) Hero.set_variant_tags(hide: ["KumasTente", "DekorTekerlek"]) → ikisi gizli
+    #      2) V-Ray Render → Stop (ISIT)
+    #      3) Hero.run_variant(suffix: "-tekeryok-tenteyok", hide: ["KumasTente", "DekorTekerlek"])
+    #   C) Bitince: Hero.variant_reset → tüm tag'leri aç + gövde beyaza dön
+    def self.set_variant_tags(hide:)
+      VARIANT_TAGS.each { |t| set_tag_visible(t, !hide.include?(t)) }
+      shown = VARIANT_TAGS - hide
+      puts "[Varyant] gizli=#{hide.inspect} görünür=#{shown.inspect} — ekranda doğru mu bak."
+      puts "[Varyant] ŞİMDİ: V-Ray Render bas → doğru araba görününce Stop (ISIT) → run_variant(... test: true)"
+    end
+
+    def self.variant_reset
+      VARIANT_TAGS.each { |t| set_tag_visible(t, true) rescue nil }
+      set_body_color("beyaz") rescue nil
+      puts "[Varyant] Tüm varyant tag'leri açıldı + gövde beyaza döndü. Model orijinal halinde."
+    end
+
+    # Beyaz base seti: hide tag'leri gizli (gerisi görünür) iken her açı için tek
+    # vrscene export. Renk BURADA üretilmez — set_body_color V-Ray'e yansımadığı
+    # için (kanıtlanmış) renkler Python ile çoğaltılır. suffix dosya adına eklenir:
+    # rumicarts_hero_{açı}{suffix} (örn. -tenteyok / -tekeryok-tenteyok).
+    def self.run_variant(suffix:, hide:, test: false)
+      require "fileutils"; FileUtils.mkdir_p(OUT_DIR)
+      set_variant_tags(hide: hide)
+      set_body_color("beyaz") rescue nil
+      scenes = test ? { "ON" => "on" } : SCENES.reject { |s, _| s == "ARKAKAPAK" }
+      puts "[Varyant#{suffix}] #{scenes.size} açı BEYAZ base export#{test ? ' (TEST)' : ''}. Renkler Python ile gelir."
+      set_camera(SCENES.keys.first)
+      base_path = File.join(OUT_DIR, "_base_variant.vrscene")
+      renderer.export(base_path)
+      kb = (File.size(base_path) / 1024.0).round
+      if kb < 200
+        puts "  ⚠ base #{kb} KB → SOĞUK EXPORT (geometri yok)."
+        puts "    Tag'ler doğru gizliyken sahneyi ISIT: V-Ray Render → Stop, sonra run_variant TEKRAR."
+        puts "    (Tag durumunu BOZMA, variant_reset YAPMA.)"
+        return
+      end
+      base = File.read(base_path)
+      unless base =~ RENDERVIEW_RE
+        puts "  ⚠ RenderView bulunamadı — dur."; return
+      end
+      exported = []
+      scenes.each do |scene, asuffix|
+        tline = cam_transform_line(scene)
+        out   = base.sub(RENDERVIEW_RE) { "#{$1}#{tline}\n" }
+        name  = "rumicarts_hero_#{asuffix}#{suffix}"   # beyaz base (açı başına 1)
+        File.write(File.join(OUT_DIR, "#{name}.vrscene"), out)
+        exported << name
+      end
+      File.delete(base_path) rescue nil
+      eng = (ENGINE == :gpu ? "-rtEngine=5 -rtNoise=0.01" : "")
+      lines = ["@echo off", "setlocal"]
+      exported.each do |b|
+        vs  = File.join(OUT_DIR, "#{b}.vrscene").tr("/", "\\")
+        png = File.join(OUT_DIR, "#{b}.png").tr("/", "\\")
+        lines << %Q{echo Rendering #{b} ...}
+        lines << %Q{"#{VRAY_EXE}" -sceneFile="#{vs}" -imgFile="#{png}" -imgWidth=#{RES_W} -imgHeight=#{RES_H} -display=0 #{eng}}
+      end
+      lines << "echo BITTI. #{exported.size} beyaz varyant render."
+      tag = suffix.gsub(/[^a-z0-9]+/i, "_").sub(/^_/, "")
+      bat = File.join(OUT_DIR, test ? "render_#{tag}_test.bat" : "render_#{tag}_beyaz.bat")
+      File.write(bat, lines.join("\r\n"))
+      puts "[Varyant#{suffix}] ✓ #{exported.size} BEYAZ vrscene yazıldı (#{kb} KB base). .bat: #{bat}"
+      if test
+        puts "[Varyant#{suffix}] TEST: #{File.basename(bat)} çift tıkla → 1 PNG → Claude'a gönder."
+      else
+        puts "[Varyant#{suffix}] ŞİMDİ: Claude'a haber ver → 6 vrscene'i Python ile 5 renge çoğaltıp"
+        puts "[Varyant#{suffix}] 30 kare render eder. (Tag durumunu BIRAK; tüm varyantlar bitince variant_reset.)"
+      end
+    end
+
     # ---- Kamera: sahneyi etkinleştir (ANİMASYONSUZ — kritik) ----------------
     # DİKKAT (2026-06-12 düzeltme): model.pages.selected_page = page kamerayı
     # ANİMASYONLA geçirir (tween). Döngüde hemen export edilince kamera daha
@@ -454,3 +546,16 @@ end
 #   c) RumicartsRender::Hero.run_tekeryok(test: true)  → 1 test karesi → render_tekeryok_test.bat
 #   d) Temizse: RumicartsRender::Hero.run_tekeryok     → 30 kare → render_tekeryok.bat
 #   e) RumicartsRender::Hero.teker_on             → tekerleği geri getir (gerekirse)
+#
+# TENTE-YOK + KOMBİNASYON seti (KumasTente tag'i SketchUp'ta hazır olmalı):
+#   A) Tente YOK (tekerlek VAR) — +30 kare:
+#      1) RumicartsRender::Hero.set_variant_tags(hide: ["KumasTente"])
+#      2) V-Ray Render → tentesiz araba görününce Stop (ısıt)
+#      3) RumicartsRender::Hero.run_variant(suffix: "-tenteyok", hide: ["KumasTente"], test: true)
+#      4) Temizse: RumicartsRender::Hero.run_variant(suffix: "-tenteyok", hide: ["KumasTente"])
+#   B) Tente YOK + Tekerlek YOK — +30 kare:
+#      1) RumicartsRender::Hero.set_variant_tags(hide: ["KumasTente", "DekorTekerlek"])
+#      2) V-Ray Render → Stop (ısıt)
+#      3) RumicartsRender::Hero.run_variant(suffix: "-tekeryok-tenteyok", hide: ["KumasTente", "DekorTekerlek"])
+#   C) Hepsi bitince: RumicartsRender::Hero.variant_reset  → tüm tag'leri aç + beyaza dön
+#   Çıkan beyaz vrscene'leri Claude Python ile 5 renge çoğaltıp render eder (60 webp).

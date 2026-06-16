@@ -66,31 +66,19 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   // raf, arka kapak, tekerlek) render'da sabittir; sipariş notuna + seçim
   // panelindeki etikete yansır.
   const colorId = selection.govdeRengi;
-  // Dekoratif Tekerlek "Yok" (varsayılan): büyük yan tekerlekler olmadan, ayrı
-  // çekilmiş gerçek render seti (-tekeryok, 5 renk × 6 açı). "Var": mevcut
-  // tekerlekli set. Her iki set de aynı 6 açıyı kapsar; alt yürütme tekerlekleri
-  // (caster) iki sette de durur.
+  // Yapısal seçimler GERÇEK render setiyle gösterilir — post-processing (kırpma/
+  // maske/CSS filtre) yok. Her eksen dosya adına bir sonek ekler; varsayılan
+  // (tekerlek var + tente var) sonek almaz. Sonek SIRASI render dosya adlarıyla
+  // birebir eşleşmeli: önce tekerlek, sonra tente.
+  //   Dekoratif Tekerlek "Yok" → -tekeryok   (büyük yan tekerlekler olmadan)
+  //   Kumaş Tente "Yok"        → -tenteyok    (kumaş tente + direkler olmadan)
+  // 5 renk × 6 açı × 2 tekerlek × 2 tente. Caster (alt yürütme) tüm setlerde durur.
   const tekerSuffix = selection.dekoratifTekerlek === "yok" ? "-tekeryok" : "";
+  const tenteSuffix = tenteOn ? "" : "-tenteyok";
+  const variant = `${tekerSuffix}${tenteSuffix}`;
   const previewSrc = COLOR_RENDER_IDS.has(colorId)
-    ? `/renders/hero-${colorId}-${angle}${tekerSuffix}.webp`
-    : `/renders/hero-${angle}${tekerSuffix}.webp`;
-
-  // Mat/Lake farkı: gerçek render tek set olduğu için malzeme hissini sadece
-  // renk derinliğiyle veririz (eklenen ışık/hüzme YOK — yapay duruyordu).
-  // Lake = daha doygun/kontrastlı/derin (vernik), Mat = daha düz/mat.
-  const isLake = getConfigProduct(productId).finish === "lake";
-  const previewFilter = isLake
-    ? "saturate(1.16) contrast(1.1) brightness(0.99)"
-    : "saturate(0.9) contrast(0.96) brightness(1.04)";
-
-  // Kumaş Tente "Yok": üst yapıyı (kumaş tente + taşıyıcı direkler) önizlemeden
-  // gizle. Gerçek render tek konfigürasyon olduğu için, geometriyi takip eden
-  // hazır "gövde maskesi" (mask-notente-{açı}.png) ile yalnız kutu+tekerlek
-  // gösterilir — kutu/tezgah üstü tam kalır, kırpılmaz. Maske geometri olduğundan
-  // tüm renklerde ortaktır.
-  const tenteCutMask = !tenteOn
-    ? `url(/renders/mask-notente-${angle}.png)`
-    : undefined;
+    ? `/renders/hero-${colorId}-${angle}${variant}.webp`
+    : `/renders/hero-${angle}${variant}.webp`;
 
   // Aktif açıda gösterilecek logo overlay'leri.
   const activeLogoSurfaces = MOCKUP_SURFACES.filter(
@@ -359,17 +347,17 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                 <img
                   src={previewSrc}
                   alt={`${pick(getConfigProduct(productId).label, locale)} — ${angle}`}
-                  className="absolute inset-0 w-full h-full object-contain pointer-events-none transition-[filter] duration-300"
-                  style={{
-                    filter: previewFilter,
-                    WebkitMaskImage: tenteCutMask,
-                    maskImage: tenteCutMask,
-                    WebkitMaskSize: "contain",
-                    maskSize: "contain",
-                    WebkitMaskPosition: "center",
-                    maskPosition: "center",
-                    WebkitMaskRepeat: "no-repeat",
-                    maskRepeat: "no-repeat",
+                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                  onError={(e) => {
+                    // Varyant render seti henüz çekilmediyse (örn. -tenteyok) en
+                    // yakın mevcut görsele düş: önce tente sonekini, sonra tekerlek
+                    // sonekini at. Render eklenince otomatik doğru görsel gelir.
+                    const img = e.currentTarget;
+                    if (img.src.includes("-tenteyok")) {
+                      img.src = img.src.replace("-tenteyok", "");
+                    } else if (img.src.includes("-tekeryok")) {
+                      img.src = img.src.replace("-tekeryok", "");
+                    }
                   }}
                 />
                 {/* Logo overlay'leri */}
