@@ -22,7 +22,11 @@ import {
   type CriterionId,
   type Quad,
   type Selection,
+  type SurfaceFill,
 } from "@/data/configurator";
+
+type AssetKind = "logo" | "giydirme";
+type Asset = { name: string; thumb: string };
 
 // --- Perspektif (homografi) yardımcıları -------------------------------
 // Logoyu bir yüzeyin 4 köşesine (quad) yatık oturtmak için, birim kareyi
@@ -95,9 +99,12 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   const [productId, setProductId] = useState<ConfigProductId>(initialProductId);
   const [selection, setSelection] = useState<Selection>(() => defaultSelection());
   const [customText, setCustomText] = useState<Partial<Record<CriterionId, string>>>({});
-  const [surfaces, setSurfaces] = useState<Record<string, boolean>>({});
-  const [logoFilename, setLogoFilename] = useState<string | null>(null);
-  const [logoThumb, setLogoThumb] = useState<string | null>(null);
+  // Her yüzeye ne uygulandığı (yok / logo / giydirme) + iki ayrı yüklenen görsel.
+  const [surfaces, setSurfaces] = useState<Record<string, SurfaceFill>>({});
+  const [assets, setAssets] = useState<Record<AssetKind, Asset | null>>({
+    logo: null,
+    giydirme: null,
+  });
   const [notes, setNotes] = useState("");
   const [angle, setAngle] = useState<AngleId>("on");
 
@@ -140,38 +147,44 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   const tekerSuffix = selection.dekoratifTekerlek === "yok" ? "-tekeryok" : "";
   const tenteSuffix = tenteOn ? "" : "-tenteyok";
   const variant = `${tekerSuffix}${tenteSuffix}`;
-  // Logo MOCKUP modu: logo yüklendiğinde önizleme, gövde üzerindeki gömülü
-  // RUMICARTS markası SİLİNMİŞ beyaz "-nologo" render'a geçer — böylece
-  // kullanıcının kendi logosu temiz bir yüzeye, marka çakışması olmadan biner.
-  // Logo yokken normal renkli/beyaz render gösterilir.
-  const previewSrc = logoThumb
+  // MOCKUP modu: herhangi bir görsel (logo/giydirme) yüklendiğinde önizleme,
+  // gövde/tente üzerindeki gömülü RUMICARTS markası SİLİNMİŞ beyaz "-nologo"
+  // render'a geçer — kullanıcının görseli temiz, marka çakışması olmayan bir
+  // yüzeye biner. Görsel yokken normal renkli/beyaz render gösterilir.
+  const hasAsset = !!(assets.logo || assets.giydirme);
+  const previewSrc = hasAsset
     ? `/renders/hero-${angle}${variant}-nologo.webp`
     : COLOR_RENDER_IDS.has(colorId)
       ? `/renders/hero-${colorId}-${angle}${variant}.webp`
       : `/renders/hero-${angle}${variant}.webp`;
 
-  // Aktif açıda gösterilecek logo overlay'leri.
-  const activeLogoSurfaces = MOCKUP_SURFACES.filter(
-    (s) =>
+  // Aktif açıda önizlenecek yüzeyler: yok değil + ilgili görsel yüklü + tente
+  // ise tente açık. Her yüzey kendi seçtiği görseli (logo/giydirme) gösterir.
+  const activeSurfaces = MOCKUP_SURFACES.filter((s) => {
+    const fill = surfaces[s.id];
+    return (
       s.angle === angle &&
-      surfaces[s.id] &&
-      logoThumb &&
-      (s.group !== "tente" || tenteOn),
-  );
+      fill && fill !== "yok" &&
+      assets[fill] &&
+      (s.group !== "tente" || tenteOn)
+    );
+  });
 
   // --- Handlers ---------------------------------------------------------
   const choose = (criterion: CriterionId, valueId: string) =>
     setSelection((prev) => ({ ...prev, [criterion]: valueId }));
 
-  const onLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setLogoFilename(file.name);
-    const reader = new FileReader();
-    reader.onload = () =>
-      setLogoThumb(typeof reader.result === "string" ? reader.result : null);
-    reader.readAsDataURL(file);
-  };
+  const onAssetChange =
+    (kind: AssetKind) => (e: ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string")
+          setAssets((p) => ({ ...p, [kind]: { name: file.name, thumb: reader.result as string } }));
+      };
+      reader.readAsDataURL(file);
+    };
 
   const handleAdd = () => {
     const cp = getConfigProduct(productId);
@@ -191,15 +204,21 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
       lines.push(`${pick(c.label, locale)}: ${val}`);
     }
     const enabledSurfaces = MOCKUP_SURFACES.filter(
-      (s) => surfaces[s.id] && (s.group !== "tente" || tenteOn),
+      (s) => surfaces[s.id] && surfaces[s.id] !== "yok" && (s.group !== "tente" || tenteOn),
     );
     if (enabledSurfaces.length) {
       lines.push(
         `${ui.mockupTitle}: ` +
-          enabledSurfaces.map((s) => pick(s.label, locale)).join(", "),
+          enabledSurfaces
+            .map(
+              (s) =>
+                `${pick(s.label, locale)} (${surfaces[s.id] === "giydirme" ? ui.labelGiydirme : ui.labelLogo})`,
+            )
+            .join(", "),
       );
     }
-    if (logoFilename) lines.push(`Logo: ${logoFilename}`);
+    if (assets.logo) lines.push(`${ui.labelLogo}: ${assets.logo.name}`);
+    if (assets.giydirme) lines.push(`${ui.labelGiydirme}: ${assets.giydirme.name}`);
     if (notes.trim()) lines.push(`\n${notes.trim()}`);
 
     const customized: Product = {
@@ -214,7 +233,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
 
     addItem(customized, 1, {
       notes: lines.join("\n"),
-      logoFilename: logoFilename || undefined,
+      logoFilename: assets.logo?.name ?? assets.giydirme?.name ?? undefined,
     });
     onOpenChange(false);
     openCart();
@@ -338,62 +357,54 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
               );
             })}
 
-            {/* Mockup — logo */}
+            {/* Mockup — logo & giydirme */}
             <Section title={ui.mockupTitle}>
-              <label className="block border border-dashed border-border px-3 py-4 text-sm text-muted-foreground cursor-pointer hover:border-foreground transition text-center">
-                {logoFilename ? ui.logoChange : ui.logoUpload}
-                <input type="file" accept="image/*" onChange={onLogoChange} className="hidden" />
-              </label>
-              {logoFilename && (
-                <div className="mt-3 flex items-center gap-3">
-                  {logoThumb && (
-                    <img
-                      src={logoThumb}
-                      alt="Logo"
-                      className="h-12 w-12 object-contain border border-border"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-foreground truncate">{logoFilename}</p>
-                    <button
-                      onClick={() => {
-                        setLogoFilename(null);
-                        setLogoThumb(null);
-                      }}
-                      className="text-xs underline text-muted-foreground"
-                    >
-                      {ui.logoRemove}
-                    </button>
-                  </div>
-                </div>
-              )}
+              {/* İki ayrı yükleme alanı */}
+              <div className="grid grid-cols-2 gap-3">
+                <AssetUpload
+                  label={ui.uploadLogo}
+                  asset={assets.logo}
+                  changeText={ui.assetChange}
+                  removeText={ui.logoRemove}
+                  onChange={onAssetChange("logo")}
+                  onRemove={() => setAssets((p) => ({ ...p, logo: null }))}
+                />
+                <AssetUpload
+                  label={ui.uploadGiydirme}
+                  asset={assets.giydirme}
+                  changeText={ui.assetChange}
+                  removeText={ui.logoRemove}
+                  onChange={onAssetChange("giydirme")}
+                  onRemove={() => setAssets((p) => ({ ...p, giydirme: null }))}
+                />
+              </div>
 
-              {/* Gövde — folyo yüzeyleri */}
+              {/* Gövde yüzeyleri */}
               <SurfaceGroup
                 heading={ui.surfacesGovde}
                 surfaces={MOCKUP_SURFACES.filter((s) => s.group === "govde")}
                 state={surfaces}
+                assets={assets}
+                ui={ui}
                 locale={locale}
-                yok={ui.yok}
-                varText={ui.varText}
-                onToggle={(id, val) => setSurfaces((p) => ({ ...p, [id]: val }))}
+                onSet={(id, fill) => setSurfaces((p) => ({ ...p, [id]: fill }))}
               />
 
-              {/* Tente — baskı yüzeyleri (tente "var" değilse pasif) */}
+              {/* Tente yüzeyleri (tente "var" değilse pasif) */}
               <SurfaceGroup
                 heading={ui.surfacesTente}
                 surfaces={MOCKUP_SURFACES.filter((s) => s.group === "tente")}
                 state={surfaces}
+                assets={assets}
+                ui={ui}
                 locale={locale}
-                yok={ui.yok}
-                varText={ui.varText}
                 disabled={!tenteOn}
                 disabledHint={ui.tenteRequired}
-                onToggle={(id, val) => setSurfaces((p) => ({ ...p, [id]: val }))}
+                onSet={(id, fill) => setSurfaces((p) => ({ ...p, [id]: fill }))}
               />
 
               <p className="mt-3 text-[11px] text-muted-foreground/80 leading-snug">
-                {ui.logoHint}
+                {ui.mockupHint}
               </p>
             </Section>
 
@@ -432,23 +443,28 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                     }
                   }}
                 />
-                {/* Logo overlay'leri — yüzeyin 4 köşesine perspektif (homografi)
-                    ile oturur; multiply blend folyo/baskı hissi verir. */}
+                {/* Logo/giydirme overlay'leri — yüzeyin 4 köşesine perspektif
+                    (homografi) ile oturur. Logo: ortalı, oranı korunur (contain);
+                    giydirme: yüzeyi tam kaplar (cover). Yüklenen görsel sadık
+                    görünsün diye normal blend (kırpma/maske yok). */}
                 {boxPx > 0 &&
-                  activeLogoSurfaces.map((s) => {
+                  activeSurfaces.map((s) => {
+                    const fill = surfaces[s.id] as AssetKind;
+                    const asset = assets[fill];
+                    if (!asset) return null;
                     const { transform, Wsrc, Hsrc } = quadWarp(s.quad, boxPx);
                     return (
                       <img
                         key={s.id}
-                        src={logoThumb!}
+                        src={asset.thumb}
                         alt=""
-                        className="absolute top-0 left-0 object-contain pointer-events-none"
+                        className="absolute top-0 left-0 pointer-events-none"
                         style={{
                           width: `${Wsrc}px`,
                           height: `${Hsrc}px`,
+                          objectFit: fill === "giydirme" ? "cover" : "contain",
                           transformOrigin: "0 0",
                           transform,
-                          mixBlendMode: "multiply",
                         }}
                       />
                     );
@@ -501,27 +517,75 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   );
 }
 
+type Ui = (typeof CONFIG_UI)["tr"];
+
+// İki ayrı yükleme kutusu (logo / giydirme) için ortak bileşen.
+function AssetUpload({
+  label,
+  asset,
+  changeText,
+  removeText,
+  onChange,
+  onRemove,
+}: {
+  label: string;
+  asset: Asset | null;
+  changeText: string;
+  removeText: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex flex-col">
+      <label className="block border border-dashed border-border px-3 py-3 text-xs text-muted-foreground cursor-pointer hover:border-foreground transition text-center leading-snug">
+        {asset ? changeText : label}
+        <input type="file" accept="image/*" onChange={onChange} className="hidden" />
+      </label>
+      {asset && (
+        <div className="mt-2 flex items-center gap-2">
+          <img
+            src={asset.thumb}
+            alt=""
+            className="h-10 w-10 object-contain border border-border shrink-0"
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] text-foreground truncate">{asset.name}</p>
+            <button onClick={onRemove} className="text-[11px] underline text-muted-foreground">
+              {removeText}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SurfaceGroup({
   heading,
   surfaces,
   state,
+  assets,
+  ui,
   locale,
-  yok,
-  varText,
   disabled,
   disabledHint,
-  onToggle,
+  onSet,
 }: {
   heading: string;
   surfaces: typeof MOCKUP_SURFACES;
-  state: Record<string, boolean>;
+  state: Record<string, SurfaceFill>;
+  assets: Record<AssetKind, Asset | null>;
+  ui: Ui;
   locale: "en" | "tr";
-  yok: string;
-  varText: string;
   disabled?: boolean;
   disabledHint?: string;
-  onToggle: (id: string, val: boolean) => void;
+  onSet: (id: string, fill: SurfaceFill) => void;
 }) {
+  const options: { id: SurfaceFill; label: string }[] = [
+    { id: "yok", label: ui.yok },
+    { id: "logo", label: ui.labelLogo },
+    { id: "giydirme", label: ui.labelGiydirme },
+  ];
   return (
     <div className={`mt-5 ${disabled ? "opacity-50" : ""}`}>
       <p className="text-xs font-medium mb-2">{heading}</p>
@@ -530,29 +594,35 @@ function SurfaceGroup({
       )}
       <div className="space-y-2">
         {surfaces.map((s) => {
-          const on = !!state[s.id];
+          const cur = state[s.id] ?? "yok";
           return (
             <div key={s.id} className="flex items-center justify-between gap-3">
               <span className="text-sm text-foreground/90">{pick(s.label, locale)}</span>
               <div className="flex border border-border">
-                <button
-                  disabled={disabled}
-                  onClick={() => onToggle(s.id, false)}
-                  className={`px-3 py-1.5 text-xs transition ${
-                    !on ? "bg-secondary text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  {yok}
-                </button>
-                <button
-                  disabled={disabled}
-                  onClick={() => onToggle(s.id, true)}
-                  className={`px-3 py-1.5 text-xs transition ${
-                    on ? "bg-foreground text-background" : "text-muted-foreground"
-                  }`}
-                >
-                  {varText}
-                </button>
+                {options.map((o) => {
+                  // Logo/giydirme seçeneği ilgili görsel yüklü değilse pasif.
+                  const needsAsset = o.id !== "yok";
+                  const noAsset = needsAsset && !assets[o.id as AssetKind];
+                  const off = disabled || noAsset;
+                  const active = cur === o.id;
+                  return (
+                    <button
+                      key={o.id}
+                      disabled={off}
+                      title={noAsset ? ui.uploadFirst : undefined}
+                      onClick={() => onSet(s.id, o.id)}
+                      className={`px-2.5 py-1.5 text-xs transition disabled:opacity-40 ${
+                        active
+                          ? o.id === "yok"
+                            ? "bg-secondary text-foreground"
+                            : "bg-foreground text-background"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );

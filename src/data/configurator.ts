@@ -285,8 +285,11 @@ export const MOCKUP_SURFACES: MockupSurface[] = [
     quad: { tl: { x: 0.40, y: 0.29 }, tr: { x: 0.575, y: 0.29 }, br: { x: 0.575, y: 0.315 }, bl: { x: 0.40, y: 0.315 } } },
 ];
 
-/** PLACEHOLDER — her yüzeyin "Var" seçildiğinde eklediği fiyat. */
+/** PLACEHOLDER — her yüzeyin (logo veya giydirme) eklediği fiyat. */
 export const SURFACE_PRICE = 60;
+
+/** Bir yüzeye ne uygulandığı: hiçbiri / logo / tam-yüzey giydirme. */
+export type SurfaceFill = "yok" | "logo" | "giydirme";
 
 // --------------------------------------------------------------------------
 // FİYAT HESABI
@@ -296,7 +299,7 @@ export type Selection = Record<CriterionId, string>;
 export function computeTotal(
   productId: ConfigProductId,
   selection: Selection,
-  surfaces: Record<string, boolean>,
+  surfaces: Record<string, SurfaceFill>,
 ): number {
   let total = getConfigProduct(productId).basePrice;
   for (const c of CRITERIA) {
@@ -305,7 +308,8 @@ export function computeTotal(
     if (opt) total += opt.priceDelta;
   }
   for (const s of MOCKUP_SURFACES) {
-    if (surfaces[s.id]) total += SURFACE_PRICE;
+    const v = surfaces[s.id];
+    if (v && v !== "yok") total += SURFACE_PRICE;
   }
   return total;
 }
@@ -342,10 +346,14 @@ export const CONFIG_UI: Record<Locale, {
   title: string;
   material: string;
   mockupTitle: string;
-  logoUpload: string;
-  logoChange: string;
+  uploadLogo: string;
+  uploadGiydirme: string;
+  assetChange: string;
   logoRemove: string;
-  logoHint: string;
+  labelLogo: string;
+  labelGiydirme: string;
+  mockupHint: string;
+  uploadFirst: string;
   surfacesGovde: string;
   surfacesTente: string;
   tenteRequired: string;
@@ -362,15 +370,19 @@ export const CONFIG_UI: Record<Locale, {
   tr: {
     title: "Arabanı tasarla",
     material: "Malzeme Seçimi (Ürün)",
-    mockupTitle: "Mockup — Logo Uygulama",
-    logoUpload: "Logonu yükle (PNG/SVG)",
-    logoChange: "Logoyu değiştir",
+    mockupTitle: "Mockup — Logo & Giydirme",
+    uploadLogo: "Logo yükle (PNG/SVG)",
+    uploadGiydirme: "Giydirme görseli yükle (tam yüzey baskı)",
+    assetChange: "Değiştir",
     logoRemove: "Kaldır",
-    logoHint:
-      "Logon siparişe kaydedilir ve üretim sırasında uygulanır. Önizleme temsilidir; gerçek görsel render'larla netleşecek.",
-    surfacesGovde: "Gövde — Folyo Uygulama",
-    surfacesTente: "Tente — Baskı",
-    tenteRequired: "Tente baskısı için önce 'Kumaş Tente: Var' seç.",
+    labelLogo: "Logo",
+    labelGiydirme: "Giydirme",
+    mockupHint:
+      "Logo yüzeye ortalı küçük marka olarak, giydirme ise yüzeyin tamamını kaplayan baskı olarak uygulanır. Her yüzeye ayrı seçim yapabilirsin. Önizleme temsilidir; sipariş notuna ve üretime aynen yansır.",
+    uploadFirst: "Önce yukarıdan görseli yükle.",
+    surfacesGovde: "Gövde Yüzeyleri",
+    surfacesTente: "Tente Yüzeyleri",
+    tenteRequired: "Tente uygulaması için önce 'Kumaş Tente: Var' seç.",
     customPlaceholder: (label) => `${label} için açıklama (ör. RAL kodu / renk tarifi)`,
     notes: "Ek notlar",
     notesPlaceholder: "Özel istekler, marka talimatları veya ekstralar...",
@@ -384,15 +396,19 @@ export const CONFIG_UI: Record<Locale, {
   en: {
     title: "Design your cart",
     material: "Material Selection (Product)",
-    mockupTitle: "Mockup — Logo Application",
-    logoUpload: "Upload your logo (PNG/SVG)",
-    logoChange: "Change logo",
+    mockupTitle: "Mockup — Logo & Wrap",
+    uploadLogo: "Upload logo (PNG/SVG)",
+    uploadGiydirme: "Upload wrap image (full-surface print)",
+    assetChange: "Change",
     logoRemove: "Remove",
-    logoHint:
-      "Your logo is saved to the order and applied during production. The preview is indicative; final visuals will be sharpened with real renders.",
-    surfacesGovde: "Body — Foil Application",
-    surfacesTente: "Awning — Print",
-    tenteRequired: "For awning print, first select 'Fabric Awning: Yes'.",
+    labelLogo: "Logo",
+    labelGiydirme: "Wrap",
+    mockupHint:
+      "A logo is applied as a small centered mark; a wrap covers the entire surface. You can choose per surface. The preview is indicative; it carries over to the order note and production.",
+    uploadFirst: "Upload the image above first.",
+    surfacesGovde: "Body Surfaces",
+    surfacesTente: "Awning Surfaces",
+    tenteRequired: "For awning application, first select 'Fabric Awning: Yes'.",
     customPlaceholder: (label) => `Describe your ${label} (e.g. RAL code / color spec)`,
     notes: "Additional notes",
     notesPlaceholder: "Special requests, branding instructions, or extras...",
