@@ -163,7 +163,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   const activeSurfaces = MOCKUP_SURFACES.filter((s) => {
     const fill = surfaces[s.id];
     return (
-      s.angle === angle &&
+      s.views[angle] &&            // bu yüzey aktif açıdan görünüyor mu
       fill && fill !== "yok" &&
       assets[fill] &&
       (s.group !== "tente" || tenteOn)
@@ -452,11 +452,13 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                     const fill = surfaces[s.id] as AssetKind;
                     const asset = assets[fill];
                     if (!asset) return null;
+                    const view = s.views[angle];
+                    if (!view) return null;
                     const isWrap = fill === "giydirme";
                     // Giydirme yüzeyin TAMAMINI (fullQuad) doldurur; logo merkezdeki
-                    // küçük alana (quad) ortalı oturur.
+                    // küçük alana (quad) ortalı oturur. Aktif açının köşeleri kullanılır.
                     const { transform, Wsrc, Hsrc } = quadWarp(
-                      isWrap ? s.fullQuad : s.quad,
+                      isWrap ? view.fullQuad : view.quad,
                       boxPx,
                     );
                     return (
