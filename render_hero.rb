@@ -352,6 +352,11 @@ module RumicartsRender
       scenes = test ? { "ON" => "on" } : SCENES.reject { |s, _| s == "ARKAKAPAK" }
       puts "[Varyant#{suffix}] #{scenes.size} açı BEYAZ base export#{test ? ' (TEST)' : ''}. Renkler Python ile gelir."
       set_camera(SCENES.keys.first)
+      # KRİTİK (2026-06-17): model.pages.selected_page = page, sahnenin KAYITLI tag/katman
+      # görünürlüğünü geri yükleyebilir → gizlediğimiz tekerlek/tente sahneye geçince
+      # TEKRAR GÖRÜNÜR olup export'a tekerlekli/tenteli sızar (yaşanan tekerlek bug'ı).
+      # Export'tan hemen ÖNCE tag'leri tekrar gizle → sahne ne kaydederse etsin gizli kalır.
+      hide.each { |t| set_tag_visible(t, false) }
       base_path = File.join(OUT_DIR, "_base_variant.vrscene")
       renderer.export(base_path)
       kb = (File.size(base_path) / 1024.0).round
@@ -410,9 +415,10 @@ module RumicartsRender
         opts["TransitionTime"]   = 0.0   if opts.respond_to?(:[])
       rescue StandardError
       end
-      # 2) Sahnenin tüm özelliklerini (stil/gölge/katman) yükle
-      model.pages.selected_page = page
-      # 3) Kamerayı DOĞRUDAN ata → tween'i atla, export doğru açıyı yakalar
+      # 2) KRİTİK (2026-06-17): model.pages.selected_page = page ARTIK YAPILMIYOR.
+      # selected_page, sahnenin KAYITLI tag/gizli-geometri görünürlüğünü geri yüklüyor →
+      # gizlediğimiz tekerlek/tente her render'da geri dönüp export'a sızıyordu (tekerlek bug'ı).
+      # Sadece kamerayı doğrudan atıyoruz; mevcut (gizli) geometri durumu korunur.
       model.active_view.camera = page.camera if page.respond_to?(:camera) && page.camera
     end
 
