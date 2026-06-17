@@ -247,6 +247,11 @@ export function isCriterionActive(
 // --------------------------------------------------------------------------
 export type MockupGroup = "govde" | "tente";
 
+/** Normalize nokta (önizleme kutusuna göre 0..1). */
+export type Pt = { x: number; y: number };
+/** Yüzeyin 4 köşesi: sol-üst, sağ-üst, sağ-alt, sol-alt (saat yönü). */
+export type Quad = { tl: Pt; tr: Pt; br: Pt; bl: Pt };
+
 export type MockupSurface = {
   id: string;
   group: MockupGroup;
@@ -254,22 +259,30 @@ export type MockupSurface = {
   /** Logonun görüneceği açı. */
   angle: AngleId;
   /**
-   * Logonun bindirileceği normalize alan (önizleme kutusuna göre 0..1).
-   * PLACEHOLDER konumlar — gerçek render gelince ince ayar yapılacak.
+   * Logonun bindirileceği yüzeyin 4 köşesi (önizleme kutusuna göre 0..1).
+   * Logo bu dörtgene perspektif (homografi) ile oturtulur — yan açılarda da
+   * doğru yatış. Köşeler gerçek render'lar üzerinde kalibre edildi.
    */
-  rect: { x: number; y: number; w: number; h: number };
+  quad: Quad;
 };
 
 export const MOCKUP_SURFACES: MockupSurface[] = [
-  // Gövde — folyo uygulama
-  { id: "govde-on", group: "govde", label: { tr: "Gövde Ön — Folyo", en: "Body Front — Foil" }, angle: "on", rect: { x: 0.34, y: 0.52, w: 0.32, h: 0.22 } },
-  { id: "govde-sag", group: "govde", label: { tr: "Gövde Sağ — Folyo", en: "Body Right — Foil" }, angle: "on-sag", rect: { x: 0.5, y: 0.52, w: 0.26, h: 0.2 } },
-  { id: "govde-sol", group: "govde", label: { tr: "Gövde Sol — Folyo", en: "Body Left — Foil" }, angle: "on-sol", rect: { x: 0.24, y: 0.52, w: 0.26, h: 0.2 } },
-  // Tente — baskı
-  { id: "tente-on", group: "tente", label: { tr: "Tente Ön — Baskı", en: "Awning Front — Print" }, angle: "on", rect: { x: 0.3, y: 0.17, w: 0.4, h: 0.12 } },
-  { id: "tente-sag", group: "tente", label: { tr: "Tente Sağ — Baskı", en: "Awning Right — Print" }, angle: "on-sag", rect: { x: 0.48, y: 0.17, w: 0.3, h: 0.12 } },
-  { id: "tente-sol", group: "tente", label: { tr: "Tente Sol — Baskı", en: "Awning Left — Print" }, angle: "on-sol", rect: { x: 0.22, y: 0.17, w: 0.3, h: 0.12 } },
-  { id: "tente-arka", group: "tente", label: { tr: "Tente Arka — Baskı", en: "Awning Back — Print" }, angle: "arka", rect: { x: 0.3, y: 0.17, w: 0.4, h: 0.12 } },
+  // Gövde — folyo uygulama (ön panel yüzeyi)
+  { id: "govde-on", group: "govde", label: { tr: "Gövde Ön — Folyo", en: "Body Front — Foil" }, angle: "on",
+    quad: { tl: { x: 0.42, y: 0.575 }, tr: { x: 0.58, y: 0.575 }, br: { x: 0.58, y: 0.665 }, bl: { x: 0.42, y: 0.665 } } },
+  { id: "govde-sag", group: "govde", label: { tr: "Gövde Sağ — Folyo", en: "Body Right — Foil" }, angle: "on-sag",
+    quad: { tl: { x: 0.415, y: 0.575 }, tr: { x: 0.58, y: 0.55 }, br: { x: 0.58, y: 0.685 }, bl: { x: 0.415, y: 0.665 } } },
+  { id: "govde-sol", group: "govde", label: { tr: "Gövde Sol — Folyo", en: "Body Left — Foil" }, angle: "on-sol",
+    quad: { tl: { x: 0.42, y: 0.55 }, tr: { x: 0.585, y: 0.575 }, br: { x: 0.585, y: 0.665 }, bl: { x: 0.42, y: 0.685 } } },
+  // Tente — baskı (çatı yüzeyi)
+  { id: "tente-on", group: "tente", label: { tr: "Tente Ön — Baskı", en: "Awning Front — Print" }, angle: "on",
+    quad: { tl: { x: 0.44, y: 0.305 }, tr: { x: 0.56, y: 0.305 }, br: { x: 0.56, y: 0.34 }, bl: { x: 0.44, y: 0.34 } } },
+  { id: "tente-sag", group: "tente", label: { tr: "Tente Sağ — Baskı", en: "Awning Right — Print" }, angle: "on-sag",
+    quad: { tl: { x: 0.46, y: 0.295 }, tr: { x: 0.585, y: 0.305 }, br: { x: 0.585, y: 0.335 }, bl: { x: 0.46, y: 0.32 } } },
+  { id: "tente-sol", group: "tente", label: { tr: "Tente Sol — Baskı", en: "Awning Left — Print" }, angle: "on-sol",
+    quad: { tl: { x: 0.415, y: 0.305 }, tr: { x: 0.54, y: 0.295 }, br: { x: 0.54, y: 0.32 }, bl: { x: 0.415, y: 0.335 } } },
+  { id: "tente-arka", group: "tente", label: { tr: "Tente Arka — Baskı", en: "Awning Back — Print" }, angle: "arka",
+    quad: { tl: { x: 0.40, y: 0.29 }, tr: { x: 0.575, y: 0.29 }, br: { x: 0.575, y: 0.315 }, bl: { x: 0.40, y: 0.315 } } },
 ];
 
 /** PLACEHOLDER — her yüzeyin "Var" seçildiğinde eklediği fiyat. */

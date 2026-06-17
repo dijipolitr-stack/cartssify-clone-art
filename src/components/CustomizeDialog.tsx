@@ -1,4 +1,4 @@
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Product } from "@/data/products";
 import { useCart } from "@/lib/cart";
@@ -20,8 +20,59 @@ import {
   type AngleId,
   type ConfigProductId,
   type CriterionId,
+  type Quad,
   type Selection,
 } from "@/data/configurator";
+
+// --- Perspektif (homografi) yardımcıları -------------------------------
+// Logoyu bir yüzeyin 4 köşesine (quad) yatık oturtmak için, birim kareyi
+// hedef dörtgene eşleyen projektif dönüşümü hesaplayıp CSS matrix3d üretir.
+// Kaynak <img> kutusu quad'ın yaklaşık en/boyuna göre boyutlandırılır
+// (object-fit: contain → logo en-boy oranı korunur), sonra warp edilir.
+function unitToQuad(p: {
+  x0: number; y0: number; x1: number; y1: number;
+  x2: number; y2: number; x3: number; y3: number;
+}) {
+  const dx1 = p.x1 - p.x2, dx2 = p.x3 - p.x2, sx = p.x0 - p.x1 + p.x2 - p.x3;
+  const dy1 = p.y1 - p.y2, dy2 = p.y3 - p.y2, sy = p.y0 - p.y1 + p.y2 - p.y3;
+  let a, b, c, d, e, f, g, h;
+  if (Math.abs(sx) < 1e-9 && Math.abs(sy) < 1e-9) {
+    a = p.x1 - p.x0; b = p.x2 - p.x1; c = p.x0;
+    d = p.y1 - p.y0; e = p.y2 - p.y1; f = p.y0;
+    g = 0; h = 0;
+  } else {
+    const den = dx1 * dy2 - dx2 * dy1;
+    g = (sx * dy2 - dx2 * sy) / den;
+    h = (dx1 * sy - sx * dy1) / den;
+    a = p.x1 - p.x0 + g * p.x1;
+    b = p.x3 - p.x0 + h * p.x3;
+    c = p.x0;
+    d = p.y1 - p.y0 + g * p.y1;
+    e = p.y3 - p.y0 + h * p.y3;
+    f = p.y0;
+  }
+  return { a, b, c, d, e, f, g, h };
+}
+
+function quadWarp(quad: Quad, boxPx: number) {
+  const tl = { x: quad.tl.x * boxPx, y: quad.tl.y * boxPx };
+  const tr = { x: quad.tr.x * boxPx, y: quad.tr.y * boxPx };
+  const br = { x: quad.br.x * boxPx, y: quad.br.y * boxPx };
+  const bl = { x: quad.bl.x * boxPx, y: quad.bl.y * boxPx };
+  const Wsrc = Math.max(Math.hypot(tr.x - tl.x, tr.y - tl.y), Math.hypot(br.x - bl.x, br.y - bl.y)) || 1;
+  const Hsrc = Math.max(Math.hypot(bl.x - tl.x, bl.y - tl.y), Math.hypot(br.x - tr.x, br.y - tr.y)) || 1;
+  const m = unitToQuad({
+    x0: tl.x, y0: tl.y, x1: tr.x, y1: tr.y,
+    x2: br.x, y2: br.y, x3: bl.x, y3: bl.y,
+  });
+  const mat = [
+    m.a / Wsrc, m.d / Wsrc, 0, m.g / Wsrc,
+    m.b / Hsrc, m.e / Hsrc, 0, m.h / Hsrc,
+    0, 0, 1, 0,
+    m.c, m.f, 0, 1,
+  ];
+  return { transform: `matrix3d(${mat.join(",")})`, Wsrc, Hsrc };
+}
 
 type Props = {
   product: Product;
@@ -49,6 +100,19 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   const [logoThumb, setLogoThumb] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [angle, setAngle] = useState<AngleId>("on");
+
+  // Önizleme kutusunun piksel boyutu (kare) — logo perspektifini px'e çevirmek için.
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [boxPx, setBoxPx] = useState(0);
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const update = () => setBoxPx(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [open]);
 
   const { addItem, openCart } = useCart();
 
@@ -343,7 +407,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
           {/* ---- Sağ: önizleme ---- */}
           <div className="bg-secondary flex flex-col">
             <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden min-h-[320px]">
-              <div className="relative w-full max-w-md aspect-square">
+              <div ref={boxRef} className="relative w-full max-w-md aspect-square">
                 <img
                   src={previewSrc}
                   alt={`${pick(getConfigProduct(productId).label, locale)} — ${angle}`}
@@ -360,21 +424,27 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                     }
                   }}
                 />
-                {/* Logo overlay'leri */}
-                {activeLogoSurfaces.map((s) => (
-                  <img
-                    key={s.id}
-                    src={logoThumb!}
-                    alt=""
-                    className="absolute object-contain pointer-events-none"
-                    style={{
-                      left: `${s.rect.x * 100}%`,
-                      top: `${s.rect.y * 100}%`,
-                      width: `${s.rect.w * 100}%`,
-                      height: `${s.rect.h * 100}%`,
-                    }}
-                  />
-                ))}
+                {/* Logo overlay'leri — yüzeyin 4 köşesine perspektif (homografi)
+                    ile oturur; multiply blend folyo/baskı hissi verir. */}
+                {boxPx > 0 &&
+                  activeLogoSurfaces.map((s) => {
+                    const { transform, Wsrc, Hsrc } = quadWarp(s.quad, boxPx);
+                    return (
+                      <img
+                        key={s.id}
+                        src={logoThumb!}
+                        alt=""
+                        className="absolute top-0 left-0 object-contain pointer-events-none"
+                        style={{
+                          width: `${Wsrc}px`,
+                          height: `${Hsrc}px`,
+                          transformOrigin: "0 0",
+                          transform,
+                          mixBlendMode: "multiply",
+                        }}
+                      />
+                    );
+                  })}
               </div>
 
               {/* Açı seçici */}
