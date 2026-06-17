@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Product } from "@/data/products";
 import { useCart } from "@/lib/cart";
@@ -109,17 +109,17 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   const [angle, setAngle] = useState<AngleId>("on");
 
   // Önizleme kutusunun piksel boyutu (kare) — logo perspektifini px'e çevirmek için.
-  const boxRef = useRef<HTMLDivElement>(null);
+  // Callback ref: Radix portal içeriği mount olduğunda kesin çağrılır (useEffect +
+  // useRef kombinasyonu portal timing'inde boxRef.current'ı null görüp ölçemiyordu).
   const [boxPx, setBoxPx] = useState(0);
-  useEffect(() => {
-    const el = boxRef.current;
+  const roRef = useRef<ResizeObserver | null>(null);
+  const measureBox = useCallback((el: HTMLDivElement | null) => {
+    roRef.current?.disconnect();
     if (!el) return;
-    const update = () => setBoxPx(el.clientWidth);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [open]);
+    setBoxPx(el.clientWidth);
+    roRef.current = new ResizeObserver(() => setBoxPx(el.clientWidth));
+    roRef.current.observe(el);
+  }, []);
 
   const { addItem, openCart } = useCart();
 
@@ -424,7 +424,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
           {/* ---- Sağ: önizleme ---- */}
           <div className="bg-secondary flex flex-col">
             <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden min-h-[320px]">
-              <div ref={boxRef} className="relative w-full max-w-md aspect-square">
+              <div ref={measureBox} className="relative w-full max-w-md aspect-square">
                 <img
                   src={previewSrc}
                   alt={`${pick(getConfigProduct(productId).label, locale)} — ${angle}`}
