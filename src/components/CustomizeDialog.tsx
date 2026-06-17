@@ -140,9 +140,15 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   const tekerSuffix = selection.dekoratifTekerlek === "yok" ? "-tekeryok" : "";
   const tenteSuffix = tenteOn ? "" : "-tenteyok";
   const variant = `${tekerSuffix}${tenteSuffix}`;
-  const previewSrc = COLOR_RENDER_IDS.has(colorId)
-    ? `/renders/hero-${colorId}-${angle}${variant}.webp`
-    : `/renders/hero-${angle}${variant}.webp`;
+  // Logo MOCKUP modu: logo yüklendiğinde önizleme, gövde üzerindeki gömülü
+  // RUMICARTS markası SİLİNMİŞ beyaz "-nologo" render'a geçer — böylece
+  // kullanıcının kendi logosu temiz bir yüzeye, marka çakışması olmadan biner.
+  // Logo yokken normal renkli/beyaz render gösterilir.
+  const previewSrc = logoThumb
+    ? `/renders/hero-${angle}${variant}-nologo.webp`
+    : COLOR_RENDER_IDS.has(colorId)
+      ? `/renders/hero-${colorId}-${angle}${variant}.webp`
+      : `/renders/hero-${angle}${variant}.webp`;
 
   // Aktif açıda gösterilecek logo overlay'leri.
   const activeLogoSurfaces = MOCKUP_SURFACES.filter(
@@ -417,7 +423,9 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                     // yakın mevcut görsele düş: önce tente sonekini, sonra tekerlek
                     // sonekini at. Render eklenince otomatik doğru görsel gelir.
                     const img = e.currentTarget;
-                    if (img.src.includes("-tenteyok")) {
+                    if (img.src.includes("-nologo")) {
+                      img.src = img.src.replace("-nologo", "");
+                    } else if (img.src.includes("-tenteyok")) {
                       img.src = img.src.replace("-tenteyok", "");
                     } else if (img.src.includes("-tekeryok")) {
                       img.src = img.src.replace("-tekeryok", "");
