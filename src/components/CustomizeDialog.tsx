@@ -452,7 +452,13 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                     const fill = surfaces[s.id] as AssetKind;
                     const asset = assets[fill];
                     if (!asset) return null;
-                    const { transform, Wsrc, Hsrc } = quadWarp(s.quad, boxPx);
+                    const isWrap = fill === "giydirme";
+                    // Giydirme yüzeyin TAMAMINI (fullQuad) doldurur; logo merkezdeki
+                    // küçük alana (quad) ortalı oturur.
+                    const { transform, Wsrc, Hsrc } = quadWarp(
+                      isWrap ? s.fullQuad : s.quad,
+                      boxPx,
+                    );
                     return (
                       <img
                         key={s.id}
@@ -462,7 +468,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                         style={{
                           width: `${Wsrc}px`,
                           height: `${Hsrc}px`,
-                          objectFit: fill === "giydirme" ? "cover" : "contain",
+                          objectFit: isWrap ? "fill" : "contain",
                           transformOrigin: "0 0",
                           transform,
                         }}

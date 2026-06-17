@@ -259,30 +259,42 @@ export type MockupSurface = {
   /** Logonun görüneceği açı. */
   angle: AngleId;
   /**
-   * Logonun bindirileceği yüzeyin 4 köşesi (önizleme kutusuna göre 0..1).
-   * Logo bu dörtgene perspektif (homografi) ile oturtulur — yan açılarda da
-   * doğru yatış. Köşeler gerçek render'lar üzerinde kalibre edildi.
+   * LOGO için: yüzeyin merkezindeki küçük marka alanı (4 köşe, 0..1).
+   * Logo bu dörtgene perspektif (homografi) ile, ortalı/oranı korunarak oturur.
    */
   quad: Quad;
+  /**
+   * GİYDİRME için: yüzeyin TAMAMI (4 köşe, 0..1). Tam-yüzey baskı bu dörtgeni
+   * doldurur — görsel boyutu ne olursa olsun yüzeye uyarlanır. Gerçek render'lara
+   * kalibre edildi.
+   */
+  fullQuad: Quad;
 };
 
 export const MOCKUP_SURFACES: MockupSurface[] = [
-  // Gövde — folyo uygulama (ön panel yüzeyi)
+  // Gövde — folyo uygulama (ön panel yüzeyi). quad = logo (merkez), fullQuad = giydirme (tüm panel).
   { id: "govde-on", group: "govde", label: { tr: "Gövde Ön — Folyo", en: "Body Front — Foil" }, angle: "on",
-    quad: { tl: { x: 0.42, y: 0.575 }, tr: { x: 0.58, y: 0.575 }, br: { x: 0.58, y: 0.665 }, bl: { x: 0.42, y: 0.665 } } },
+    quad: { tl: { x: 0.42, y: 0.575 }, tr: { x: 0.58, y: 0.575 }, br: { x: 0.58, y: 0.665 }, bl: { x: 0.42, y: 0.665 } },
+    fullQuad: { tl: { x: 0.385, y: 0.556 }, tr: { x: 0.605, y: 0.556 }, br: { x: 0.605, y: 0.702 }, bl: { x: 0.385, y: 0.702 } } },
   { id: "govde-sag", group: "govde", label: { tr: "Gövde Sağ — Folyo", en: "Body Right — Foil" }, angle: "on-sag",
-    quad: { tl: { x: 0.415, y: 0.575 }, tr: { x: 0.58, y: 0.55 }, br: { x: 0.58, y: 0.685 }, bl: { x: 0.415, y: 0.665 } } },
+    quad: { tl: { x: 0.415, y: 0.575 }, tr: { x: 0.58, y: 0.55 }, br: { x: 0.58, y: 0.685 }, bl: { x: 0.415, y: 0.665 } },
+    fullQuad: { tl: { x: 0.40, y: 0.556 }, tr: { x: 0.605, y: 0.52 }, br: { x: 0.605, y: 0.715 }, bl: { x: 0.40, y: 0.70 } } },
   { id: "govde-sol", group: "govde", label: { tr: "Gövde Sol — Folyo", en: "Body Left — Foil" }, angle: "on-sol",
-    quad: { tl: { x: 0.42, y: 0.55 }, tr: { x: 0.585, y: 0.575 }, br: { x: 0.585, y: 0.665 }, bl: { x: 0.42, y: 0.685 } } },
+    quad: { tl: { x: 0.42, y: 0.55 }, tr: { x: 0.585, y: 0.575 }, br: { x: 0.585, y: 0.665 }, bl: { x: 0.42, y: 0.685 } },
+    fullQuad: { tl: { x: 0.395, y: 0.52 }, tr: { x: 0.60, y: 0.556 }, br: { x: 0.60, y: 0.70 }, bl: { x: 0.395, y: 0.715 } } },
   // Tente — baskı (çatı yüzeyi)
   { id: "tente-on", group: "tente", label: { tr: "Tente Ön — Baskı", en: "Awning Front — Print" }, angle: "on",
-    quad: { tl: { x: 0.44, y: 0.305 }, tr: { x: 0.56, y: 0.305 }, br: { x: 0.56, y: 0.34 }, bl: { x: 0.44, y: 0.34 } } },
+    quad: { tl: { x: 0.44, y: 0.305 }, tr: { x: 0.56, y: 0.305 }, br: { x: 0.56, y: 0.34 }, bl: { x: 0.44, y: 0.34 } },
+    fullQuad: { tl: { x: 0.39, y: 0.282 }, tr: { x: 0.61, y: 0.282 }, br: { x: 0.61, y: 0.346 }, bl: { x: 0.39, y: 0.346 } } },
   { id: "tente-sag", group: "tente", label: { tr: "Tente Sağ — Baskı", en: "Awning Right — Print" }, angle: "on-sag",
-    quad: { tl: { x: 0.46, y: 0.295 }, tr: { x: 0.585, y: 0.305 }, br: { x: 0.585, y: 0.335 }, bl: { x: 0.46, y: 0.32 } } },
+    quad: { tl: { x: 0.46, y: 0.295 }, tr: { x: 0.585, y: 0.305 }, br: { x: 0.585, y: 0.335 }, bl: { x: 0.46, y: 0.32 } },
+    fullQuad: { tl: { x: 0.40, y: 0.285 }, tr: { x: 0.63, y: 0.30 }, br: { x: 0.63, y: 0.355 }, bl: { x: 0.40, y: 0.335 } } },
   { id: "tente-sol", group: "tente", label: { tr: "Tente Sol — Baskı", en: "Awning Left — Print" }, angle: "on-sol",
-    quad: { tl: { x: 0.415, y: 0.305 }, tr: { x: 0.54, y: 0.295 }, br: { x: 0.54, y: 0.32 }, bl: { x: 0.415, y: 0.335 } } },
+    quad: { tl: { x: 0.415, y: 0.305 }, tr: { x: 0.54, y: 0.295 }, br: { x: 0.54, y: 0.32 }, bl: { x: 0.415, y: 0.335 } },
+    fullQuad: { tl: { x: 0.37, y: 0.30 }, tr: { x: 0.60, y: 0.285 }, br: { x: 0.60, y: 0.335 }, bl: { x: 0.37, y: 0.355 } } },
   { id: "tente-arka", group: "tente", label: { tr: "Tente Arka — Baskı", en: "Awning Back — Print" }, angle: "arka",
-    quad: { tl: { x: 0.40, y: 0.29 }, tr: { x: 0.575, y: 0.29 }, br: { x: 0.575, y: 0.315 }, bl: { x: 0.40, y: 0.315 } } },
+    quad: { tl: { x: 0.40, y: 0.29 }, tr: { x: 0.575, y: 0.29 }, br: { x: 0.575, y: 0.315 }, bl: { x: 0.40, y: 0.315 } },
+    fullQuad: { tl: { x: 0.375, y: 0.272 }, tr: { x: 0.605, y: 0.272 }, br: { x: 0.605, y: 0.34 }, bl: { x: 0.375, y: 0.34 } } },
 ];
 
 /** PLACEHOLDER — her yüzeyin (logo veya giydirme) eklediği fiyat. */
