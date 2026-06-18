@@ -277,13 +277,13 @@ export const MOCKUP_SURFACES: MockupSurface[] = [
   // Sağ/sol çapraz açılarda düz görseli eğimli yüzeye warp etmek yapay duruyordu;
   // overlay sadece "on" açısında bindirilir (kullanıcı kararı: ön açıya odakla).
   { id: "govde-on", group: "govde", label: { tr: "Gövde Ön Yüzü", en: "Body Front" }, views: {
-      "on": { quad: { tl: { x: 0.42, y: 0.578 }, tr: { x: 0.575, y: 0.578 }, br: { x: 0.575, y: 0.66 }, bl: { x: 0.42, y: 0.66 } },
-              fullQuad: { tl: { x: 0.392, y: 0.557 }, tr: { x: 0.596, y: 0.557 }, br: { x: 0.596, y: 0.698 }, bl: { x: 0.392, y: 0.698 } } },
+      "on": { quad: { tl: { x: 0.43, y: 0.578 }, tr: { x: 0.585, y: 0.578 }, br: { x: 0.585, y: 0.66 }, bl: { x: 0.43, y: 0.66 } },
+              fullQuad: { tl: { x: 0.396, y: 0.548 }, tr: { x: 0.613, y: 0.548 }, br: { x: 0.613, y: 0.70 }, bl: { x: 0.396, y: 0.70 } } },
   } },
-  // Tente Ön yüzü — yalnızca ön açıda. Çatı ön yüzü trapez (üstte dar, altta geniş).
+  // Tente Ön yüzü — yalnızca ön açıda. Çatı ön yüzü (sırt→saçak) gerçek köşelere kalibre.
   { id: "tente-on", group: "tente", label: { tr: "Tente Ön Yüzü", en: "Awning Front" }, views: {
       "on": { quad: { tl: { x: 0.44, y: 0.30 }, tr: { x: 0.56, y: 0.30 }, br: { x: 0.565, y: 0.34 }, bl: { x: 0.435, y: 0.34 } },
-              fullQuad: { tl: { x: 0.40, y: 0.28 }, tr: { x: 0.585, y: 0.28 }, br: { x: 0.608, y: 0.353 }, bl: { x: 0.378, y: 0.353 } } },
+              fullQuad: { tl: { x: 0.38, y: 0.276 }, tr: { x: 0.615, y: 0.276 }, br: { x: 0.61, y: 0.353 }, bl: { x: 0.375, y: 0.353 } } },
   } },
   // Tente Arka yüzü — arka açıda görünür.
   { id: "tente-arka", group: "tente", label: { tr: "Tente Arka Yüzü", en: "Awning Back" }, views: {
