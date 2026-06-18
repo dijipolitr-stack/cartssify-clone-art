@@ -361,6 +361,7 @@ export const CONFIG_UI: Record<Locale, {
   labelGiydirme: string;
   mockupHint: string;
   mockupAngleHint: string;
+  wheelHiddenNote: string;
   uploadFirst: string;
   surfacesGovde: string;
   surfacesTente: string;
@@ -388,6 +389,8 @@ export const CONFIG_UI: Record<Locale, {
     mockupHint:
       "Logo yüzeye ortalı küçük marka olarak, giydirme ise yüzeyin tamamını kaplayan baskı olarak uygulanır. Her yüzeye ayrı seçim yapabilirsin. Önizleme temsilidir; sipariş notuna ve üretime aynen yansır.",
     mockupAngleHint: "Logo/giydirme önizlemesi ön açıda (tente arkası için arka açıda) gösterilir.",
+    wheelHiddenNote:
+      "Önizlemede deseni net görmeniz için dekoratif tekerlek gizlendi. Üründe seçtiğiniz tekerlek yer alır ve desenin alt köşesini kısmen örtebilir.",
     uploadFirst: "Önce yukarıdan görseli yükle.",
     surfacesGovde: "Gövde Yüzeyleri",
     surfacesTente: "Tente Yüzeyleri",
@@ -415,6 +418,8 @@ export const CONFIG_UI: Record<Locale, {
     mockupHint:
       "A logo is applied as a small centered mark; a wrap covers the entire surface. You can choose per surface. The preview is indicative; it carries over to the order note and production.",
     mockupAngleHint: "The logo/wrap preview is shown on the front view (back view for the awning back).",
+    wheelHiddenNote:
+      "The decorative wheel is hidden here so you can see the artwork clearly. Your chosen wheel stays on the product and may partly cover the lower corner of the design.",
     uploadFirst: "Upload the image above first.",
     surfacesGovde: "Body Surfaces",
     surfacesTente: "Awning Surfaces",

@@ -526,6 +526,15 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                 ))}
               </div>
 
+              {/* Mockup modunda dekoratif tekerlek gizlenir (panel temiz görünsün
+                  diye). Kullanıcı tekerleği "var" seçtiyse gerçek üründe duracağını
+                  hatırlat — önizlemede yok diye kafası karışmasın. */}
+              {hasAsset && selection.dekoratifTekerlek !== "yok" && (
+                <p className="mt-2 text-[10px] text-amber-700/80 text-center max-w-md leading-snug">
+                  {ui.wheelHiddenNote}
+                </p>
+              )}
+
               <p className="mt-2 text-[10px] text-muted-foreground/70 text-center">
                 {ui.placeholderNote}
               </p>
