@@ -170,13 +170,19 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     );
   });
 
-  // Bir yüzeye atama yapıldı ama aktif açıda overlay yok (kullanıcı sağ/sol gibi
-  // mockup gösterilmeyen bir açıda) → ön/arka açı ipucu göster.
-  const anyAssigned = MOCKUP_SURFACES.some((s) => {
+  // Mockup modunda (görsel yüklü + en az bir yüzeye atanmış) açı seçici SADECE
+  // overlay'in düzgün oturduğu açıları gösterir — sağ/sol gibi foto oturmayan
+  // açılar gizlenir. Atama yoksa tüm açılar görünür (renk/yapı önizlemesi için).
+  const mockupAngles = new Set<AngleId>();
+  for (const s of MOCKUP_SURFACES) {
     const f = surfaces[s.id];
-    return f && f !== "yok" && (s.group !== "tente" || tenteOn);
-  });
-  const showAngleHint = hasAsset && anyAssigned && activeSurfaces.length === 0;
+    if (f && f !== "yok" && (s.group !== "tente" || tenteOn))
+      (Object.keys(s.views) as AngleId[]).forEach((a) => mockupAngles.add(a));
+  }
+  const shownAngles =
+    hasAsset && mockupAngles.size > 0
+      ? ANGLES.filter((a) => mockupAngles.has(a.id))
+      : ANGLES;
 
   // --- Handlers ---------------------------------------------------------
   const choose = (criterion: CriterionId, valueId: string) =>
@@ -498,9 +504,9 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                   })}
               </div>
 
-              {/* Açı seçici */}
+              {/* Açı seçici (mockup modunda yalnızca foto'nun oturduğu açılar) */}
               <div className="mt-4 flex flex-wrap gap-1.5 justify-center">
-                {ANGLES.map((a) => (
+                {shownAngles.map((a) => (
                   <button
                     key={a.id}
                     onClick={() => setAngle(a.id)}
@@ -515,11 +521,6 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                 ))}
               </div>
 
-              {showAngleHint && (
-                <p className="mt-3 text-[11px] text-foreground/80 text-center font-medium">
-                  {ui.mockupAngleHint}
-                </p>
-              )}
               <p className="mt-2 text-[10px] text-muted-foreground/70 text-center">
                 {ui.placeholderNote}
               </p>
