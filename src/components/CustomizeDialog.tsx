@@ -170,9 +170,28 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     );
   });
 
+  // Bir yüzeye atama yapıldı ama aktif açıda overlay yok (kullanıcı sağ/sol gibi
+  // mockup gösterilmeyen bir açıda) → ön/arka açı ipucu göster.
+  const anyAssigned = MOCKUP_SURFACES.some((s) => {
+    const f = surfaces[s.id];
+    return f && f !== "yok" && (s.group !== "tente" || tenteOn);
+  });
+  const showAngleHint = hasAsset && anyAssigned && activeSurfaces.length === 0;
+
   // --- Handlers ---------------------------------------------------------
   const choose = (criterion: CriterionId, valueId: string) =>
     setSelection((prev) => ({ ...prev, [criterion]: valueId }));
+
+  // Bir yüzeye logo/giydirme atandığında önizlemeyi o yüzeyin görünür olduğu
+  // (frontal) açıya geçir — böylece kullanıcı mockup'ı hemen doğru açıdan görür.
+  const setSurfaceFill = (id: string, fill: SurfaceFill) => {
+    setSurfaces((p) => ({ ...p, [id]: fill }));
+    if (fill !== "yok") {
+      const s = MOCKUP_SURFACES.find((x) => x.id === id);
+      const firstAngle = s && (Object.keys(s.views)[0] as AngleId | undefined);
+      if (firstAngle) setAngle(firstAngle);
+    }
+  };
 
   const onAssetChange =
     (kind: AssetKind) => (e: ChangeEvent<HTMLInputElement>) => {
@@ -387,7 +406,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                 assets={assets}
                 ui={ui}
                 locale={locale}
-                onSet={(id, fill) => setSurfaces((p) => ({ ...p, [id]: fill }))}
+                onSet={setSurfaceFill}
               />
 
               {/* Tente yüzeyleri (tente "var" değilse pasif) */}
@@ -400,7 +419,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                 locale={locale}
                 disabled={!tenteOn}
                 disabledHint={ui.tenteRequired}
-                onSet={(id, fill) => setSurfaces((p) => ({ ...p, [id]: fill }))}
+                onSet={setSurfaceFill}
               />
 
               <p className="mt-3 text-[11px] text-muted-foreground/80 leading-snug">
@@ -496,7 +515,12 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                 ))}
               </div>
 
-              <p className="mt-3 text-[10px] text-muted-foreground/70 text-center">
+              {showAngleHint && (
+                <p className="mt-3 text-[11px] text-foreground/80 text-center font-medium">
+                  {ui.mockupAngleHint}
+                </p>
+              )}
+              <p className="mt-2 text-[10px] text-muted-foreground/70 text-center">
                 {ui.placeholderNote}
               </p>
             </div>

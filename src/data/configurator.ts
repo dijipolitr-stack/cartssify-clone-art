@@ -273,23 +273,17 @@ export type MockupSurface = {
 };
 
 export const MOCKUP_SURFACES: MockupSurface[] = [
-  // Gövde Ön paneli — on/on-sag/on-sol açılarında görünür (her açıda kendi perspektifi).
+  // Gövde Ön paneli — mockup yalnızca tam oturduğu ÖN (frontal) açıda gösterilir.
+  // Sağ/sol çapraz açılarda düz görseli eğimli yüzeye warp etmek yapay duruyordu;
+  // overlay sadece "on" açısında bindirilir (kullanıcı kararı: ön açıya odakla).
   { id: "govde-on", group: "govde", label: { tr: "Gövde Ön Yüzü", en: "Body Front" }, views: {
-      "on":     { quad: { tl: { x: 0.42, y: 0.575 }, tr: { x: 0.58, y: 0.575 }, br: { x: 0.58, y: 0.665 }, bl: { x: 0.42, y: 0.665 } },
-                  fullQuad: { tl: { x: 0.385, y: 0.556 }, tr: { x: 0.605, y: 0.556 }, br: { x: 0.605, y: 0.702 }, bl: { x: 0.385, y: 0.702 } } },
-      "on-sag": { quad: { tl: { x: 0.41, y: 0.577 }, tr: { x: 0.575, y: 0.57 }, br: { x: 0.575, y: 0.62 }, bl: { x: 0.41, y: 0.625 } },
-                  fullQuad: { tl: { x: 0.387, y: 0.557 }, tr: { x: 0.608, y: 0.55 }, br: { x: 0.608, y: 0.71 }, bl: { x: 0.387, y: 0.703 } } },
-      "on-sol": { quad: { tl: { x: 0.445, y: 0.567 }, tr: { x: 0.61, y: 0.574 }, br: { x: 0.61, y: 0.622 }, bl: { x: 0.445, y: 0.615 } },
-                  fullQuad: { tl: { x: 0.42, y: 0.547 }, tr: { x: 0.635, y: 0.557 }, br: { x: 0.635, y: 0.70 }, bl: { x: 0.42, y: 0.687 } } },
+      "on": { quad: { tl: { x: 0.42, y: 0.575 }, tr: { x: 0.58, y: 0.575 }, br: { x: 0.58, y: 0.665 }, bl: { x: 0.42, y: 0.665 } },
+              fullQuad: { tl: { x: 0.385, y: 0.556 }, tr: { x: 0.605, y: 0.556 }, br: { x: 0.605, y: 0.702 }, bl: { x: 0.385, y: 0.702 } } },
   } },
-  // Tente Ön yüzü — on/on-sag/on-sol açılarında görünür.
+  // Tente Ön yüzü — yalnızca ön açıda.
   { id: "tente-on", group: "tente", label: { tr: "Tente Ön Yüzü", en: "Awning Front" }, views: {
-      "on":     { quad: { tl: { x: 0.44, y: 0.305 }, tr: { x: 0.56, y: 0.305 }, br: { x: 0.56, y: 0.34 }, bl: { x: 0.44, y: 0.34 } },
-                  fullQuad: { tl: { x: 0.39, y: 0.282 }, tr: { x: 0.61, y: 0.282 }, br: { x: 0.61, y: 0.346 }, bl: { x: 0.39, y: 0.346 } } },
-      "on-sag": { quad: { tl: { x: 0.42, y: 0.307 }, tr: { x: 0.575, y: 0.297 }, br: { x: 0.575, y: 0.327 }, bl: { x: 0.42, y: 0.337 } },
-                  fullQuad: { tl: { x: 0.40, y: 0.305 }, tr: { x: 0.595, y: 0.292 }, br: { x: 0.595, y: 0.345 }, bl: { x: 0.40, y: 0.358 } } },
-      "on-sol": { quad: { tl: { x: 0.44, y: 0.30 }, tr: { x: 0.60, y: 0.305 }, br: { x: 0.60, y: 0.335 }, bl: { x: 0.44, y: 0.33 } },
-                  fullQuad: { tl: { x: 0.42, y: 0.297 }, tr: { x: 0.605, y: 0.302 }, br: { x: 0.605, y: 0.35 }, bl: { x: 0.42, y: 0.345 } } },
+      "on": { quad: { tl: { x: 0.44, y: 0.305 }, tr: { x: 0.56, y: 0.305 }, br: { x: 0.56, y: 0.34 }, bl: { x: 0.44, y: 0.34 } },
+              fullQuad: { tl: { x: 0.39, y: 0.282 }, tr: { x: 0.61, y: 0.282 }, br: { x: 0.61, y: 0.346 }, bl: { x: 0.39, y: 0.346 } } },
   } },
   // Tente Arka yüzü — arka açıda görünür.
   { id: "tente-arka", group: "tente", label: { tr: "Tente Arka Yüzü", en: "Awning Back" }, views: {
@@ -366,6 +360,7 @@ export const CONFIG_UI: Record<Locale, {
   labelLogo: string;
   labelGiydirme: string;
   mockupHint: string;
+  mockupAngleHint: string;
   uploadFirst: string;
   surfacesGovde: string;
   surfacesTente: string;
@@ -392,6 +387,7 @@ export const CONFIG_UI: Record<Locale, {
     labelGiydirme: "Giydirme",
     mockupHint:
       "Logo yüzeye ortalı küçük marka olarak, giydirme ise yüzeyin tamamını kaplayan baskı olarak uygulanır. Her yüzeye ayrı seçim yapabilirsin. Önizleme temsilidir; sipariş notuna ve üretime aynen yansır.",
+    mockupAngleHint: "Logo/giydirme önizlemesi ön açıda (tente arkası için arka açıda) gösterilir.",
     uploadFirst: "Önce yukarıdan görseli yükle.",
     surfacesGovde: "Gövde Yüzeyleri",
     surfacesTente: "Tente Yüzeyleri",
@@ -418,6 +414,7 @@ export const CONFIG_UI: Record<Locale, {
     labelGiydirme: "Wrap",
     mockupHint:
       "A logo is applied as a small centered mark; a wrap covers the entire surface. You can choose per surface. The preview is indicative; it carries over to the order note and production.",
+    mockupAngleHint: "The logo/wrap preview is shown on the front view (back view for the awning back).",
     uploadFirst: "Upload the image above first.",
     surfacesGovde: "Body Surfaces",
     surfacesTente: "Awning Surfaces",
