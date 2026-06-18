@@ -277,8 +277,8 @@ export const MOCKUP_SURFACES: MockupSurface[] = [
   // Sağ/sol çapraz açılarda düz görseli eğimli yüzeye warp etmek yapay duruyordu;
   // overlay sadece "on" açısında bindirilir (kullanıcı kararı: ön açıya odakla).
   { id: "govde-on", group: "govde", label: { tr: "Gövde Ön Yüzü", en: "Body Front" }, views: {
-      "on": { quad: { tl: { x: 0.43, y: 0.578 }, tr: { x: 0.585, y: 0.578 }, br: { x: 0.585, y: 0.66 }, bl: { x: 0.43, y: 0.66 } },
-              fullQuad: { tl: { x: 0.396, y: 0.548 }, tr: { x: 0.613, y: 0.548 }, br: { x: 0.613, y: 0.70 }, bl: { x: 0.396, y: 0.70 } } },
+      "on": { quad: { tl: { x: 0.448, y: 0.585 }, tr: { x: 0.552, y: 0.585 }, br: { x: 0.552, y: 0.682 }, bl: { x: 0.448, y: 0.682 } },
+              fullQuad: { tl: { x: 0.402, y: 0.557 }, tr: { x: 0.602, y: 0.557 }, br: { x: 0.602, y: 0.713 }, bl: { x: 0.402, y: 0.713 } } },
   } },
   // Tente Ön yüzü — yalnızca ön açıda. Çatı ön yüzü (sırt→saçak) gerçek köşelere kalibre.
   { id: "tente-on", group: "tente", label: { tr: "Tente Ön Yüzü", en: "Awning Front" }, views: {

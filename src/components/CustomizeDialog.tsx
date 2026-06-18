@@ -144,14 +144,19 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   //   Dekoratif Tekerlek "Yok" → -tekeryok   (büyük yan tekerlekler olmadan)
   //   Kumaş Tente "Yok"        → -tenteyok    (kumaş tente + direkler olmadan)
   // 5 renk × 6 açı × 2 tekerlek × 2 tente. Caster (alt yürütme) tüm setlerde durur.
-  const tekerSuffix = selection.dekoratifTekerlek === "yok" ? "-tekeryok" : "";
+  // MOCKUP modunda (logo/giydirme yüklü) önizleme her zaman TEKERLEKSİZ render'a
+  // geçer: büyük dekoratif jant gövde ön panelinin tam önünde durup giydirmeyi
+  // örtüyordu. Tekerlek kalkınca panel tertemiz kalır, görsel panele tam oturur.
+  // Gerçek "Dekoratif Tekerlek" seçimi sipariş notunda korunur.
+  const hasAsset = !!(assets.logo || assets.giydirme);
+  const tekerSuffix =
+    hasAsset || selection.dekoratifTekerlek === "yok" ? "-tekeryok" : "";
   const tenteSuffix = tenteOn ? "" : "-tenteyok";
   const variant = `${tekerSuffix}${tenteSuffix}`;
   // MOCKUP modu: herhangi bir görsel (logo/giydirme) yüklendiğinde önizleme,
   // gövde/tente üzerindeki gömülü RUMICARTS markası SİLİNMİŞ beyaz "-nologo"
   // render'a geçer — kullanıcının görseli temiz, marka çakışması olmayan bir
   // yüzeye biner. Görsel yokken normal renkli/beyaz render gösterilir.
-  const hasAsset = !!(assets.logo || assets.giydirme);
   const previewSrc = hasAsset
     ? `/renders/hero-${angle}${variant}-nologo.webp`
     : COLOR_RENDER_IDS.has(colorId)
