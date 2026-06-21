@@ -23,20 +23,29 @@ export type Product = {
 };
 
 // --------------------------------------------------------------------------
-// Katalog görselleri — GERÇEK V-Ray hero render'ları (2026-06-13, 7 açı).
-// Dekorlu showroom sahnesinden alındı, 2000px → public/renders/hero-{açı}.webp.
-// 4 ürün şimdilik aynı hero setini paylaşır: tek beyaz araba render edildi;
-// boyut/yüzey varyantına özel render'lar (konfigüratör grid'i) ayrı bir iş.
+// Katalog görselleri — GERÇEK V-Ray hero render'ları (7 açı).
+// Render seti boyuta göre ayrılır: 150 cm ürünler AYRI 150 raflı setten
+// (/renders/150/), 100 cm ürünler kök setten (/renders/) galeri gösterir.
+// Konfigüratör önizlemesi de aynı mantıkla boyuta göre seçer (CustomizeDialog).
 // --------------------------------------------------------------------------
-const heroImage = "/renders/hero-on.webp";
-const galleryImages = [
+const GALLERY_ANGLES = [
   "on-sag",
   "on-sol",
   "arka",
   "arka-sag",
   "arka-sol",
   "arka-kapak",
-].map((a) => `/renders/hero-${a}.webp`);
+];
+function renderBaseFor(size: "100cm" | "150cm"): string {
+  return size === "150cm" ? "/renders/150" : "/renders";
+}
+function heroImageFor(size: "100cm" | "150cm"): string {
+  return `${renderBaseFor(size)}/hero-on.webp`;
+}
+function galleryFor(size: "100cm" | "150cm"): string[] {
+  const base = renderBaseFor(size);
+  return GALLERY_ANGLES.map((a) => `${base}/hero-${a}.webp`);
+}
 
 const baseFeatures = [
   "Tek araçta 7 kriterle özelleştir — gövde/tente/metal rengi, tekerlek, raf, arka kapak",
@@ -72,8 +81,8 @@ export const products: Product[] = CONFIG_PRODUCTS.map((cp) => {
     slug: cp.slug,
     title: cp.label.en,
     price: `${formatPrice(cp.basePrice)} USD`,
-    image: heroImage,
-    gallery: galleryImages,
+    image: heroImageFor(cp.size),
+    gallery: galleryFor(cp.size),
     tagline: "Mobile Cart — fully customizable",
     description:
       "A fully customizable mobile cart. Choose size and finish, then configure body, awning, wheels, shelf, back cover and metal color — and add your own logo.",
