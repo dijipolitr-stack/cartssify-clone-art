@@ -8,7 +8,7 @@ import {
   CONFIG_PRODUCTS,
   CONFIG_UI,
   CRITERIA,
-  MOCKUP_SURFACES,
+  getMockupSurfaces,
   computeTotal,
   defaultSelection,
   formatPrice,
@@ -20,6 +20,7 @@ import {
   type AngleId,
   type ConfigProductId,
   type CriterionId,
+  type MockupSurface,
   type Quad,
   type Selection,
   type SurfaceFill,
@@ -163,6 +164,9 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   // render'a düşer (overlay yine biner). 150 renk + yapısal varyantlar tam mevcut.
   const renderBase =
     getConfigProduct(productId).size === "150cm" ? "/renders/150" : "/renders";
+  // Mockup yüzey köşeleri (quad/fullQuad) boyuta göre ayrı kalibre — 150 raflı
+  // panelleri farklı konumda. getMockupSurfaces doğru seti döndürür.
+  const mockupSurfaces = getMockupSurfaces(getConfigProduct(productId).size);
   const previewSrc = hasAsset
     ? `${renderBase}/hero-${angle}${variant}-nologo.webp`
     : COLOR_RENDER_IDS.has(colorId)
@@ -171,7 +175,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
 
   // Aktif açıda önizlenecek yüzeyler: yok değil + ilgili görsel yüklü + tente
   // ise tente açık. Her yüzey kendi seçtiği görseli (logo/giydirme) gösterir.
-  const activeSurfaces = MOCKUP_SURFACES.filter((s) => {
+  const activeSurfaces = mockupSurfaces.filter((s) => {
     const fill = surfaces[s.id];
     return (
       s.views[angle] &&            // bu yüzey aktif açıdan görünüyor mu
@@ -185,7 +189,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   // overlay'in düzgün oturduğu açıları gösterir — sağ/sol gibi foto oturmayan
   // açılar gizlenir. Atama yoksa tüm açılar görünür (renk/yapı önizlemesi için).
   const mockupAngles = new Set<AngleId>();
-  for (const s of MOCKUP_SURFACES) {
+  for (const s of mockupSurfaces) {
     const f = surfaces[s.id];
     if (f && f !== "yok" && (s.group !== "tente" || tenteOn))
       (Object.keys(s.views) as AngleId[]).forEach((a) => mockupAngles.add(a));
@@ -204,7 +208,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   const setSurfaceFill = (id: string, fill: SurfaceFill) => {
     setSurfaces((p) => ({ ...p, [id]: fill }));
     if (fill !== "yok") {
-      const s = MOCKUP_SURFACES.find((x) => x.id === id);
+      const s = mockupSurfaces.find((x) => x.id === id);
       const firstAngle = s && (Object.keys(s.views)[0] as AngleId | undefined);
       if (firstAngle) setAngle(firstAngle);
     }
@@ -239,7 +243,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
       }
       lines.push(`${pick(c.label, locale)}: ${val}`);
     }
-    const enabledSurfaces = MOCKUP_SURFACES.filter(
+    const enabledSurfaces = mockupSurfaces.filter(
       (s) => surfaces[s.id] && surfaces[s.id] !== "yok" && (s.group !== "tente" || tenteOn),
     );
     if (enabledSurfaces.length) {
@@ -418,7 +422,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
               {/* Gövde yüzeyleri */}
               <SurfaceGroup
                 heading={ui.surfacesGovde}
-                surfaces={MOCKUP_SURFACES.filter((s) => s.group === "govde")}
+                surfaces={mockupSurfaces.filter((s) => s.group === "govde")}
                 state={surfaces}
                 assets={assets}
                 ui={ui}
@@ -429,7 +433,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
               {/* Tente yüzeyleri (tente "var" değilse pasif) */}
               <SurfaceGroup
                 heading={ui.surfacesTente}
-                surfaces={MOCKUP_SURFACES.filter((s) => s.group === "tente")}
+                surfaces={mockupSurfaces.filter((s) => s.group === "tente")}
                 state={surfaces}
                 assets={assets}
                 ui={ui}
@@ -625,7 +629,7 @@ function SurfaceGroup({
   onSet,
 }: {
   heading: string;
-  surfaces: typeof MOCKUP_SURFACES;
+  surfaces: MockupSurface[];
   state: Record<string, SurfaceFill>;
   assets: Record<AssetKind, Asset | null>;
   ui: Ui;

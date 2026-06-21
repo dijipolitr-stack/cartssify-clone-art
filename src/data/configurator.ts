@@ -292,6 +292,30 @@ export const MOCKUP_SURFACES: MockupSurface[] = [
   } },
 ];
 
+// 150 RAFLI set — AYRI render seti (/renders/150/) farklı panel konumlarında.
+// Quad/fullQuad köşeleri 150 beyaz render'larına homografi kompozit testiyle
+// kalibre edildi (2026-06-21). 100 cm set yukarıdaki MOCKUP_SURFACES'i kullanmaya
+// devam eder; getMockupSurfaces(size) doğru seti döndürür.
+export const MOCKUP_SURFACES_150: MockupSurface[] = [
+  { id: "govde-on", group: "govde", label: { tr: "Gövde Ön Yüzü", en: "Body Front" }, views: {
+      "on": { quad: { tl: { x: 0.423, y: 0.594 }, tr: { x: 0.577, y: 0.594 }, br: { x: 0.577, y: 0.650 }, bl: { x: 0.423, y: 0.650 } },
+              fullQuad: { tl: { x: 0.345, y: 0.576 }, tr: { x: 0.655, y: 0.576 }, br: { x: 0.655, y: 0.668 }, bl: { x: 0.345, y: 0.668 } } },
+  } },
+  { id: "tente-on", group: "tente", label: { tr: "Tente Ön Yüzü", en: "Awning Front" }, views: {
+      "on": { quad: { tl: { x: 0.417, y: 0.308 }, tr: { x: 0.583, y: 0.308 }, br: { x: 0.583, y: 0.344 }, bl: { x: 0.417, y: 0.344 } },
+              fullQuad: { tl: { x: 0.333, y: 0.295 }, tr: { x: 0.667, y: 0.295 }, br: { x: 0.662, y: 0.357 }, bl: { x: 0.338, y: 0.357 } } },
+  } },
+  { id: "tente-arka", group: "tente", label: { tr: "Tente Arka Yüzü", en: "Awning Back" }, views: {
+      "arka": { quad: { tl: { x: 0.423, y: 0.340 }, tr: { x: 0.577, y: 0.340 }, br: { x: 0.577, y: 0.445 }, bl: { x: 0.423, y: 0.445 } },
+                fullQuad: { tl: { x: 0.345, y: 0.287 }, tr: { x: 0.655, y: 0.287 }, br: { x: 0.665, y: 0.497 }, bl: { x: 0.335, y: 0.497 } } },
+  } },
+];
+
+/** Ürün boyutuna göre doğru mockup yüzey setini döndür (100 kök set / 150 raflı set). */
+export function getMockupSurfaces(size: "100cm" | "150cm"): MockupSurface[] {
+  return size === "150cm" ? MOCKUP_SURFACES_150 : MOCKUP_SURFACES;
+}
+
 /** PLACEHOLDER — her yüzeyin (logo veya giydirme) eklediği fiyat. */
 export const SURFACE_PRICE = 60;
 
