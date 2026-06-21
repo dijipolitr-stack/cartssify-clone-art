@@ -157,11 +157,17 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   // gövde/tente üzerindeki gömülü RUMICARTS markası SİLİNMİŞ beyaz "-nologo"
   // render'a geçer — kullanıcının görseli temiz, marka çakışması olmayan bir
   // yüzeye biner. Görsel yokken normal renkli/beyaz render gösterilir.
+  // Render seti boyuta göre ayrılır: 150 cm ürünler AYRI 150 raflı render setini
+  // (/renders/150/) kullanır; 100 cm ürünler eski kök seti (/renders/). 150 setinde
+  // henüz -nologo (mockup) karesi yok → mockup modunda onError fallback markalı
+  // render'a düşer (overlay yine biner). 150 renk + yapısal varyantlar tam mevcut.
+  const renderBase =
+    getConfigProduct(productId).size === "150cm" ? "/renders/150" : "/renders";
   const previewSrc = hasAsset
-    ? `/renders/hero-${angle}${variant}-nologo.webp`
+    ? `${renderBase}/hero-${angle}${variant}-nologo.webp`
     : COLOR_RENDER_IDS.has(colorId)
-      ? `/renders/hero-${colorId}-${angle}${variant}.webp`
-      : `/renders/hero-${angle}${variant}.webp`;
+      ? `${renderBase}/hero-${colorId}-${angle}${variant}.webp`
+      : `${renderBase}/hero-${angle}${variant}.webp`;
 
   // Aktif açıda önizlenecek yüzeyler: yok değil + ilgili görsel yüklü + tente
   // ise tente açık. Her yüzey kendi seçtiği görseli (logo/giydirme) gösterir.
