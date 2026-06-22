@@ -159,9 +159,9 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   // render'a geçer — kullanıcının görseli temiz, marka çakışması olmayan bir
   // yüzeye biner. Görsel yokken normal renkli/beyaz render gösterilir.
   // Render seti boyuta göre ayrılır: 150 cm ürünler AYRI 150 raflı render setini
-  // (/renders/150/) kullanır; 100 cm ürünler eski kök seti (/renders/). 150 setinde
-  // henüz -nologo (mockup) karesi yok → mockup modunda onError fallback markalı
-  // render'a düşer (overlay yine biner). 150 renk + yapısal varyantlar tam mevcut.
+  // (/renders/150/) kullanır; 100 cm ürünler eski kök seti (/renders/). Her iki set
+  // de tam: 145 webp + 24 -nologo (mockup) karesi — renk, yapısal ve mockup varyantları
+  // birebir eşleşir, mockup modunda boyuttan bağımsız doğru -nologo render'a biner.
   const renderBase =
     getConfigProduct(productId).size === "150cm" ? "/renders/150" : "/renders";
   // Mockup yüzey köşeleri (quad/fullQuad) boyuta göre ayrı kalibre — 150 raflı
