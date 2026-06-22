@@ -158,12 +158,18 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   // gövde/tente üzerindeki gömülü RUMICARTS markası SİLİNMİŞ beyaz "-nologo"
   // render'a geçer — kullanıcının görseli temiz, marka çakışması olmayan bir
   // yüzeye biner. Görsel yokken normal renkli/beyaz render gösterilir.
-  // Render seti boyuta göre ayrılır: 150 cm ürünler AYRI 150 raflı render setini
-  // (/renders/150/) kullanır; 100 cm ürünler eski kök seti (/renders/). Her iki set
-  // de tam: 145 webp + 24 -nologo (mockup) karesi — renk, yapısal ve mockup varyantları
-  // birebir eşleşir, mockup modunda boyuttan bağımsız doğru -nologo render'a biner.
+  // Render seti boyut + tutamaç/raf seçimine göre ayrılır:
+  //   150 cm + Raf      → /renders/150        (raflı set)
+  //   150 cm + Tutamaç  → /renders/150-rafsiz (rafsız set, R=166 ile raflı kadrajına hizalı)
+  //   100 cm            → /renders            (eski kök set, 100 rafsız)
+  // Rafsız set ana renk/açıları paylaşır (kamera/renk raflıdan devralındı); raf↔tutamaç
+  // GERÇEK geometri farkı görünür (rafsızda raf yok, tutamaç var).
   const renderBase =
-    getConfigProduct(productId).size === "150cm" ? "/renders/150" : "/renders";
+    getConfigProduct(productId).size === "150cm"
+      ? selection.tutamacRaf === "raf"
+        ? "/renders/150"
+        : "/renders/150-rafsiz"
+      : "/renders";
   // Mockup yüzey köşeleri (quad/fullQuad) boyuta göre ayrı kalibre — 150 raflı
   // panelleri farklı konumda. getMockupSurfaces doğru seti döndürür.
   const mockupSurfaces = getMockupSurfaces(getConfigProduct(productId).size);
