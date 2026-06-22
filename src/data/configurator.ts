@@ -311,9 +311,36 @@ export const MOCKUP_SURFACES_150: MockupSurface[] = [
   } },
 ];
 
-/** Ürün boyutuna göre doğru mockup yüzey setini döndür (100 kök set / 150 raflı set). */
-export function getMockupSurfaces(size: "100cm" | "150cm"): MockupSurface[] {
-  return size === "150cm" ? MOCKUP_SURFACES_150 : MOCKUP_SURFACES;
+// 150 RAFSIZ set (/renders/150-rafsiz/). Gövde ön + tente ön yüzleri 150 raflıyla
+// neredeyse aynı (kasa/tente ön yüzü benzer, R=166 ile kadraj hizalı). Tek fark:
+// tente ARKA yüzü rafsızda daha kısa → fullQuad/quad alt kenarı yukarı çekildi
+// (görsel quad overlay testiyle hero-arka'ya kalibre, 2026-06-22).
+export const MOCKUP_SURFACES_150_RAFSIZ: MockupSurface[] = [
+  { id: "govde-on", group: "govde", label: { tr: "Gövde Ön Yüzü", en: "Body Front" }, views: {
+      "on": { quad: { tl: { x: 0.418, y: 0.601 }, tr: { x: 0.581, y: 0.601 }, br: { x: 0.581, y: 0.672 }, bl: { x: 0.418, y: 0.672 } },
+              fullQuad: { tl: { x: 0.336, y: 0.558 }, tr: { x: 0.663, y: 0.558 }, br: { x: 0.663, y: 0.715 }, bl: { x: 0.336, y: 0.715 } } },
+  } },
+  { id: "tente-on", group: "tente", label: { tr: "Tente Ön Yüzü", en: "Awning Front" }, views: {
+      "on": { quad: { tl: { x: 0.417, y: 0.308 }, tr: { x: 0.583, y: 0.308 }, br: { x: 0.583, y: 0.344 }, bl: { x: 0.417, y: 0.344 } },
+              fullQuad: { tl: { x: 0.333, y: 0.295 }, tr: { x: 0.667, y: 0.295 }, br: { x: 0.662, y: 0.357 }, bl: { x: 0.338, y: 0.357 } } },
+  } },
+  { id: "tente-arka", group: "tente", label: { tr: "Tente Arka Yüzü", en: "Awning Back" }, views: {
+      "arka": { quad: { tl: { x: 0.423, y: 0.320 }, tr: { x: 0.577, y: 0.320 }, br: { x: 0.577, y: 0.390 }, bl: { x: 0.423, y: 0.390 } },
+                fullQuad: { tl: { x: 0.345, y: 0.282 }, tr: { x: 0.655, y: 0.282 }, br: { x: 0.662, y: 0.420 }, bl: { x: 0.338, y: 0.420 } } },
+  } },
+];
+
+/**
+ * Doğru mockup yüzey setini döndür. 100 cm → kök set; 150 cm → raf seçimine göre
+ * raflı (MOCKUP_SURFACES_150) veya rafsız (MOCKUP_SURFACES_150_RAFSIZ) set.
+ * tutamacRaf verilmezse 150 cm için raflı set (geri uyumlu varsayılan).
+ */
+export function getMockupSurfaces(
+  size: "100cm" | "150cm",
+  tutamacRaf?: string,
+): MockupSurface[] {
+  if (size !== "150cm") return MOCKUP_SURFACES;
+  return tutamacRaf === "raf" ? MOCKUP_SURFACES_150 : MOCKUP_SURFACES_150_RAFSIZ;
 }
 
 /** PLACEHOLDER — her yüzeyin (logo veya giydirme) eklediği fiyat. */

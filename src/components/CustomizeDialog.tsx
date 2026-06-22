@@ -172,7 +172,10 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
       : "/renders";
   // Mockup yüzey köşeleri (quad/fullQuad) boyuta göre ayrı kalibre — 150 raflı
   // panelleri farklı konumda. getMockupSurfaces doğru seti döndürür.
-  const mockupSurfaces = getMockupSurfaces(getConfigProduct(productId).size);
+  const mockupSurfaces = getMockupSurfaces(
+    getConfigProduct(productId).size,
+    selection.tutamacRaf,
+  );
   const previewSrc = hasAsset
     ? `${renderBase}/hero-${angle}${variant}-nologo.webp`
     : COLOR_RENDER_IDS.has(colorId)
