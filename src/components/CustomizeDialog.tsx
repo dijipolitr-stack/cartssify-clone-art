@@ -161,15 +161,17 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   // Render seti boyut + tutamaç/raf seçimine göre ayrılır:
   //   150 cm + Raf      → /renders/150        (raflı set)
   //   150 cm + Tutamaç  → /renders/150-rafsiz (rafsız set, R=166 ile raflı kadrajına hizalı)
-  //   100 cm            → /renders            (eski kök set, 100 rafsız)
-  // Rafsız set ana renk/açıları paylaşır (kamera/renk raflıdan devralındı); raf↔tutamaç
-  // GERÇEK geometri farkı görünür (rafsızda raf yok, tutamaç var).
+  //   100 cm + Raf      → /renders/100-rafli  (raflı set, R=177 ile 150 kadrajına hizalı)
+  //   100 cm + Tutamaç  → /renders            (eski kök set, 100 rafsız)
+  // Her set raf↔tutamaç GERÇEK geometri farkını gösterir; renk/kamera ayarları paylaşılır.
   const renderBase =
     getConfigProduct(productId).size === "150cm"
       ? selection.tutamacRaf === "raf"
         ? "/renders/150"
         : "/renders/150-rafsiz"
-      : "/renders";
+      : selection.tutamacRaf === "raf"
+        ? "/renders/100-rafli"
+        : "/renders";
   // Mockup yüzey köşeleri (quad/fullQuad) boyuta göre ayrı kalibre — 150 raflı
   // panelleri farklı konumda. getMockupSurfaces doğru seti döndürür.
   const mockupSurfaces = getMockupSurfaces(

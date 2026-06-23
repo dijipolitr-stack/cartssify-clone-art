@@ -339,8 +339,11 @@ export function getMockupSurfaces(
   size: "100cm" | "150cm",
   tutamacRaf?: string,
 ): MockupSurface[] {
-  if (size !== "150cm") return MOCKUP_SURFACES;
-  return tutamacRaf === "raf" ? MOCKUP_SURFACES_150 : MOCKUP_SURFACES_150_RAFSIZ;
+  if (size === "150cm")
+    return tutamacRaf === "raf" ? MOCKUP_SURFACES_150 : MOCKUP_SURFACES_150_RAFSIZ;
+  // 100 cm: Raf → 100 raflı set (R=177 ile 150 raflı kadrajına hizalı, onun quad'ları çok yakın);
+  //         Tutamaç → kök 100 rafsız set.
+  return tutamacRaf === "raf" ? MOCKUP_SURFACES_150 : MOCKUP_SURFACES;
 }
 
 /** PLACEHOLDER — her yüzeyin (logo veya giydirme) eklediği fiyat. */
