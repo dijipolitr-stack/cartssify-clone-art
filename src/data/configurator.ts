@@ -335,15 +335,32 @@ export const MOCKUP_SURFACES_150_RAFSIZ: MockupSurface[] = [
  * raflı (MOCKUP_SURFACES_150) veya rafsız (MOCKUP_SURFACES_150_RAFSIZ) set.
  * tutamacRaf verilmezse 150 cm için raflı set (geri uyumlu varsayılan).
  */
+// 100 RAFLI set (/renders/100-rafli/). R=177 ile 150 raflı kadrajına yakın ama 100 araç daha
+// dar → gövde paneli daha dar (yan kanatlar quad dışında), tente arka daha kısa. Görsel overlay
+// testiyle hero-on/hero-arka'ya kalibre (2026-06-23). Tente ön 150 raflıyla aynı (iyi oturuyor).
+export const MOCKUP_SURFACES_100_RAFLI: MockupSurface[] = [
+  { id: "govde-on", group: "govde", label: { tr: "Gövde Ön Yüzü", en: "Body Front" }, views: {
+      "on": { quad: { tl: { x: 0.435, y: 0.602 }, tr: { x: 0.575, y: 0.602 }, br: { x: 0.575, y: 0.665 }, bl: { x: 0.435, y: 0.665 } },
+              fullQuad: { tl: { x: 0.395, y: 0.560 }, tr: { x: 0.610, y: 0.560 }, br: { x: 0.610, y: 0.715 }, bl: { x: 0.395, y: 0.715 } } },
+  } },
+  { id: "tente-on", group: "tente", label: { tr: "Tente Ön Yüzü", en: "Awning Front" }, views: {
+      "on": { quad: { tl: { x: 0.417, y: 0.308 }, tr: { x: 0.583, y: 0.308 }, br: { x: 0.583, y: 0.344 }, bl: { x: 0.417, y: 0.344 } },
+              fullQuad: { tl: { x: 0.333, y: 0.295 }, tr: { x: 0.667, y: 0.295 }, br: { x: 0.662, y: 0.357 }, bl: { x: 0.338, y: 0.357 } } },
+  } },
+  { id: "tente-arka", group: "tente", label: { tr: "Tente Arka Yüzü", en: "Awning Back" }, views: {
+      "arka": { quad: { tl: { x: 0.425, y: 0.320 }, tr: { x: 0.575, y: 0.320 }, br: { x: 0.575, y: 0.398 }, bl: { x: 0.425, y: 0.398 } },
+                fullQuad: { tl: { x: 0.350, y: 0.290 }, tr: { x: 0.650, y: 0.290 }, br: { x: 0.655, y: 0.435 }, bl: { x: 0.345, y: 0.435 } } },
+  } },
+];
+
 export function getMockupSurfaces(
   size: "100cm" | "150cm",
   tutamacRaf?: string,
 ): MockupSurface[] {
   if (size === "150cm")
     return tutamacRaf === "raf" ? MOCKUP_SURFACES_150 : MOCKUP_SURFACES_150_RAFSIZ;
-  // 100 cm: Raf → 100 raflı set (R=177 ile 150 raflı kadrajına hizalı, onun quad'ları çok yakın);
-  //         Tutamaç → kök 100 rafsız set.
-  return tutamacRaf === "raf" ? MOCKUP_SURFACES_150 : MOCKUP_SURFACES;
+  // 100 cm: Raf → 100 raflıya kalibre set; Tutamaç → kök 100 rafsız set.
+  return tutamacRaf === "raf" ? MOCKUP_SURFACES_100_RAFLI : MOCKUP_SURFACES;
 }
 
 /** PLACEHOLDER — her yüzeyin (logo veya giydirme) eklediği fiyat. */
