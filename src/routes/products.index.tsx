@@ -62,6 +62,13 @@ function ProductsPage() {
                     alt={p.title}
                     loading="lazy"
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                    // Mat = düz yüzey; Lake = parlak vernik → daha kontrastlı/derin/ışıltılı
+                    // göster (CSS, render ile aynı görseli paylaşırlar ama yüzey farkı belli olur).
+                    style={
+                      p.finish === "lake"
+                        ? { filter: "contrast(1.1) saturate(1.12) brightness(1.03)" }
+                        : undefined
+                    }
                   />
                   {p.comingSoon && (
                     <span className="absolute top-3 left-3 bg-foreground/90 text-background text-[10px] tracking-[0.25em] uppercase px-2.5 py-1">

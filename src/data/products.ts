@@ -5,6 +5,8 @@ export type Product = {
   title: string;
   price: string;
   image: string;
+  /** Yüzey: mat (düz) / lake (parlak vernik) — kartta CSS ile parlaklık farkı için. */
+  finish?: "mat" | "lake";
   gallery?: string[];
   tagline?: string;
   description: string;
@@ -42,6 +44,15 @@ function renderBaseFor(size: "100cm" | "150cm"): string {
 function heroImageFor(size: "100cm" | "150cm"): string {
   return `${renderBaseFor(size)}/hero-on.webp`;
 }
+// Ürünler sayfası vitrini — her kart FARKLI bir varyant göstererek çeşitliliği sergiler:
+// boyut (100/150), raf (raflı/rafsız), tente (var/yok), tekerlek (var/yok), renk
+// (mat = beyaz/krem, lake = renkli). Tüm bu render setleri canlıda mevcut.
+const KART_VITRIN: Record<string, string> = {
+  "kart-100-mat-lam": "/renders/100-rafli/hero-on.webp", // 100 raflı, tenteli, tekerlekli, beyaz
+  "kart-100-parlak-lake": "/renders/hero-mavi-on-tenteyok.webp", // 100 rafsız, tentesiz, mavi
+  "kart-150-mat-lam": "/renders/150/hero-on-tekeryok.webp", // 150 raflı, tekerleksiz, beyaz
+  "kart-150-parlak-lake": "/renders/150-rafsiz/hero-kirmizi-on.webp", // 150 rafsız, tenteli, kırmızı
+};
 function galleryFor(size: "100cm" | "150cm"): string[] {
   const base = renderBaseFor(size);
   return GALLERY_ANGLES.map((a) => `${base}/hero-${a}.webp`);
@@ -81,7 +92,8 @@ export const products: Product[] = CONFIG_PRODUCTS.map((cp) => {
     slug: cp.slug,
     title: cp.label.en,
     price: `${formatPrice(cp.basePrice)} USD`,
-    image: heroImageFor(cp.size),
+    image: KART_VITRIN[cp.slug] ?? heroImageFor(cp.size),
+    finish: cp.finish,
     gallery: galleryFor(cp.size),
     tagline: "Mobile Cart — fully customizable",
     description:
