@@ -178,6 +178,9 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     getConfigProduct(productId).size,
     selection.tutamacRaf,
   );
+  // Lake (parlak vernik) yüzey → önizlemede daha kontrastlı/ışıltılı göster; Mat düz.
+  // Ürünler sayfası kartlarıyla AYNI CSS değerleri (tutarlı mat/lake yüzey hissi).
+  const isLake = getConfigProduct(productId).finish === "lake";
   const previewSrc = hasAsset
     ? `${renderBase}/hero-${angle}${variant}-nologo.webp`
     : COLOR_RENDER_IDS.has(colorId)
@@ -480,6 +483,11 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                   src={previewSrc}
                   alt={`${pick(getConfigProduct(productId).label, locale)} — ${angle}`}
                   className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                  style={
+                    isLake
+                      ? { filter: "contrast(1.1) saturate(1.12) brightness(1.03)" }
+                      : undefined
+                  }
                   onError={(e) => {
                     // Varyant render seti henüz çekilmediyse (örn. -tenteyok) en
                     // yakın mevcut görsele düş: önce tente sonekini, sonra tekerlek
