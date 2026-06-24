@@ -23,16 +23,6 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
-function toBase64(buf: ArrayBuffer): string {
-  const bytes = new Uint8Array(buf);
-  let bin = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(bin);
-}
-
 export async function handleMockup(
   request: Request,
   env: MockupEnv,
@@ -41,37 +31,37 @@ export async function handleMockup(
   const key = env.GEMINI_API_KEY;
   if (!key) return json({ error: "GEMINI_API_KEY missing" }, 500);
 
-  let payload: { aracUrl?: string; designDataUrl?: string; prompt?: string };
+  let payload: {
+    aracDataUrl?: string;
+    designDataUrl?: string;
+    prompt?: string;
+  };
   try {
     payload = await request.json();
   } catch {
     return json({ error: "bad json" }, 400);
   }
-  const { aracUrl, designDataUrl, prompt } = payload;
-  if (!aracUrl || !designDataUrl) return json({ error: "missing image" }, 400);
+  const { aracDataUrl, designDataUrl, prompt } = payload;
+  if (!aracDataUrl || !designDataUrl) return json({ error: "missing image" }, 400);
 
-  // Araç render'ı (aynı origin, public/renders) çek → base64
-  let aracB64: string;
-  try {
-    const r = await fetch(aracUrl);
-    if (!r.ok) return json({ error: `arac fetch ${r.status}` }, 502);
-    aracB64 = toBase64(await r.arrayBuffer());
-  } catch (e) {
-    return json({ error: `arac fetch: ${String(e)}` }, 502);
-  }
+  // İki görsel de base64 data URL olarak gelir (araç frontend'de fetch edilir →
+  // Worker self-subrequest 404 sorunu olmaz).
+  const am = /^data:([^;]+);base64,(.+)$/s.exec(aracDataUrl);
+  if (!am) return json({ error: "arac must be base64 data url" }, 400);
+  const aracMime = am[1];
+  const aracB64 = am[2];
 
-  // Tasarım data URL'sini parçala
-  const m = /^data:([^;]+);base64,(.+)$/s.exec(designDataUrl);
-  if (!m) return json({ error: "design must be base64 data url" }, 400);
-  const designMime = m[1];
-  const designB64 = m[2];
+  const dm = /^data:([^;]+);base64,(.+)$/s.exec(designDataUrl);
+  if (!dm) return json({ error: "design must be base64 data url" }, 400);
+  const designMime = dm[1];
+  const designB64 = dm[2];
 
   const body = {
     contents: [
       {
         parts: [
           { text: prompt || DEFAULT_PROMPT },
-          { inlineData: { mimeType: "image/webp", data: aracB64 } },
+          { inlineData: { mimeType: aracMime, data: aracB64 } },
           { inlineData: { mimeType: designMime, data: designB64 } },
         ],
       },

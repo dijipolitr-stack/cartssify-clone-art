@@ -319,13 +319,21 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     setMockupLoading(true);
     setMockupError(null);
     try {
+      // Araç render'ını tarayıcıda fetch et → base64 (Worker self-fetch sorununu önler)
+      const aracResp = await fetch(previewSrc);
+      if (!aracResp.ok)
+        throw new Error(`araç görseli yüklenemedi (${aracResp.status})`);
+      const aracBlob = await aracResp.blob();
+      const aracDataUrl = await new Promise<string>((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result as string);
+        fr.onerror = () => reject(new Error("araç görseli okunamadı"));
+        fr.readAsDataURL(aracBlob);
+      });
       const res = await fetch("/api/mockup", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          aracUrl: window.location.origin + previewSrc,
-          designDataUrl: asset.thumb,
-        }),
+        body: JSON.stringify({ aracDataUrl, designDataUrl: asset.thumb }),
       });
       const data = (await res.json()) as {
         mockupDataUrl?: string;
