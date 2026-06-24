@@ -118,10 +118,10 @@ function makeProduct(o: {
 
 // 4 ANA ürün: 100/150 cm × tenteli/tentesiz, beyaz. Detayda renk + tüm özelleştirme.
 export const products: Product[] = [
-  makeProduct({ slug: "kart-150-tenteli", configSlug: "kart-150-mat-lam", size: "150cm", image: "/renders/150/hero-on.webp", finish: "mat", titleEn: "150 cm — With Awning", titleTr: "150 cm — Tenteli" }),
-  makeProduct({ slug: "kart-150-tentesiz", configSlug: "kart-150-mat-lam", size: "150cm", image: "/renders/150/hero-on-tenteyok.webp", finish: "mat", titleEn: "150 cm — No Awning", titleTr: "150 cm — Tentesiz" }),
-  makeProduct({ slug: "kart-100-tenteli", configSlug: "kart-100-mat-lam", size: "100cm", image: "/renders/hero-on.webp", finish: "mat", titleEn: "100 cm — With Awning", titleTr: "100 cm — Tenteli" }),
-  makeProduct({ slug: "kart-100-tentesiz", configSlug: "kart-100-mat-lam", size: "100cm", image: "/renders/hero-on-tenteyok.webp", finish: "mat", titleEn: "100 cm — No Awning", titleTr: "100 cm — Tentesiz" }),
+  makeProduct({ slug: "kart-150-tenteli", configSlug: "kart-150-mat-lam", size: "150cm", image: "/renders/150/hero-on.webp", finish: "mat", titleEn: "150 cm Shelf · With Awning", titleTr: "150 cm Raflı · Tenteli" }),
+  makeProduct({ slug: "kart-150-tentesiz", configSlug: "kart-150-mat-lam", size: "150cm", image: "/renders/150/hero-on-tenteyok.webp", finish: "mat", titleEn: "150 cm Shelf · No Awning", titleTr: "150 cm Raflı · Tentesiz" }),
+  makeProduct({ slug: "kart-100-tenteli", configSlug: "kart-100-mat-lam", size: "100cm", image: "/renders/hero-on.webp", finish: "mat", titleEn: "100 cm Handle · With Awning", titleTr: "100 cm Tutamaçlı · Tenteli" }),
+  makeProduct({ slug: "kart-100-tentesiz", configSlug: "kart-100-mat-lam", size: "100cm", image: "/renders/hero-on-tenteyok.webp", finish: "mat", titleEn: "100 cm Handle · No Awning", titleTr: "100 cm Tutamaçlı · Tentesiz" }),
 ];
 
 export function getProduct(slug: string) {
