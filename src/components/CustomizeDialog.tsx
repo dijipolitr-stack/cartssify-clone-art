@@ -526,25 +526,26 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                     const view = s.views[angle];
                     if (!view) return null;
                     const isWrap = fill === "giydirme";
-                    // Giydirme yüzeyin TAMAMINI (fullQuad) doldurur; logo merkezdeki
-                    // küçük alana (quad) ortalı oturur. Aktif açının köşeleri kullanılır.
-                    const { transform, Wsrc, Hsrc } = quadWarp(
-                      isWrap ? view.fullQuad : view.quad,
-                      boxPx,
-                    );
+                    // BASİT ÇERÇEVE: araç ön yüzü ölçüsü sabit → quad'ın bounding box'ı
+                    // (sol/üst + en/boy) bir dikdörtgen çerçeve oluşturur. matrix3d perspektif
+                    // yöntemi tarayıcıda görseli çerçeveye tam oturtmuyordu; düz dikdörtgen +
+                    // overflow:hidden ile görsel çerçeveyi GARANTİ tam doldurur (boşluk yok).
+                    const q = isWrap ? view.fullQuad : view.quad;
+                    const xs = [q.tl.x, q.tr.x, q.br.x, q.bl.x];
+                    const ys = [q.tl.y, q.tr.y, q.br.y, q.bl.y];
+                    const L = Math.min(...xs) * boxPx;
+                    const T = Math.min(...ys) * boxPx;
+                    const W = (Math.max(...xs) - Math.min(...xs)) * boxPx;
+                    const H = (Math.max(...ys) - Math.min(...ys)) * boxPx;
                     return (
-                      // Wrapper, yüzeyin 4 köşesine (matrix3d) oturur ve overflow:hidden
-                      // ile görseli panelin İÇİNE KIRPAR → taşma fiziksel olarak imkânsız.
-                      // Görsel wrapper'ı kaplar: giydirme cover (oranı korur, panele sığar,
-                      // kenar taşan kısım kırpılır), logo contain (tam görünür, ortalı).
                       <div
                         key={s.id}
-                        className="absolute top-0 left-0 pointer-events-none overflow-hidden"
+                        className="absolute pointer-events-none overflow-hidden"
                         style={{
-                          width: `${Wsrc}px`,
-                          height: `${Hsrc}px`,
-                          transformOrigin: "0 0",
-                          transform,
+                          left: `${L}px`,
+                          top: `${T}px`,
+                          width: `${W}px`,
+                          height: `${H}px`,
                         }}
                       >
                         <img
