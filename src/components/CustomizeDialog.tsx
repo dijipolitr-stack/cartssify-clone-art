@@ -84,9 +84,11 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   const { locale } = useI18n();
   const ui = CONFIG_UI[locale];
 
-  // Açan ürün 4 konfigüre edilebilir üründen biriyse onu önseç; değilse ilki.
+  // Açan ürün 4 konfigüre edilebilir üründen biriyse onu önseç; vitrin (showcase)
+  // ürünüyse configSlug ile ilgili konfigüratöre düş; hiçbiri değilse ilki.
   const initialProductId =
-    getConfigProductBySlug(product.slug)?.id ?? CONFIG_PRODUCTS[0].id;
+    getConfigProductBySlug(product.configSlug ?? product.slug)?.id ??
+    CONFIG_PRODUCTS[0].id;
 
   const [productId, setProductId] = useState<ConfigProductId>(initialProductId);
   const [selection, setSelection] = useState<Selection>(() => defaultSelection());
