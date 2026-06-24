@@ -181,11 +181,23 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   // Lake (parlak vernik) yüzey → önizlemede daha kontrastlı/ışıltılı göster; Mat düz.
   // Ürünler sayfası kartlarıyla AYNI CSS değerleri (tutarlı mat/lake yüzey hissi).
   const isLake = getConfigProduct(productId).finish === "lake";
+  // Metal rengi önizleme — _Material176 (direkler + tutamaç + jant göbeği) renklendirildi.
+  // KAPSAM (render maliyeti): SADECE beyaz gövde + ANA set (tekerlek+tente var) + 150 raflı
+  // (/renders/150) ve 100 rafsız (/renders). Krom = varsayılan, ek görsel gerekmez. Diğer
+  // kombinasyonlarda (renkli gövde, varyant, 150-rafsız/100-raflı) metal kromda kalır.
+  const metalActive =
+    colorId === "beyaz" &&
+    selection.metalRengi !== "krom" &&
+    variant === "" &&
+    !hasAsset &&
+    (renderBase === "/renders" || renderBase === "/renders/150");
   const previewSrc = hasAsset
     ? `${renderBase}/hero-${angle}${variant}-nologo.webp`
     : COLOR_RENDER_IDS.has(colorId)
       ? `${renderBase}/hero-${colorId}-${angle}${variant}.webp`
-      : `${renderBase}/hero-${angle}${variant}.webp`;
+      : metalActive
+        ? `${renderBase}/hero-${angle}-metal-${selection.metalRengi}.webp`
+        : `${renderBase}/hero-${angle}${variant}.webp`;
 
   // Aktif açıda önizlenecek yüzeyler: yok değil + ilgili görsel yüklü + tente
   // ise tente açık. Her yüzey kendi seçtiği görseli (logo/giydirme) gösterir.
