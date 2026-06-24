@@ -248,15 +248,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
         );
         const ui = new Image();
         ui.onload = () => {
-          if (cancelled) return;
-          drawFit(ctx, ui, dx, dy, dw, dh, isWrap);
-          // GEÇİCİ DEBUG: giydirme/logo çerçevesinin araç ön yüzüne oturup
-          // oturmadığını görmek için kırmızı sınır çiz (teşhis sonrası kalkacak).
-          ctx.save();
-          ctx.strokeStyle = "rgba(255,0,0,0.9)";
-          ctx.lineWidth = 3;
-          ctx.strokeRect(dx, dy, dw, dh);
-          ctx.restore();
+          if (!cancelled) drawFit(ctx, ui, dx, dy, dw, dh, isWrap);
         };
         ui.src = asset.thumb;
       }
