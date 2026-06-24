@@ -248,7 +248,30 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
         );
         const ui = new Image();
         ui.onload = () => {
-          if (!cancelled) drawFit(ctx, ui, dx, dy, dw, dh, isWrap);
+          if (cancelled) return;
+          drawFit(ctx, ui, dx, dy, dw, dh, isWrap);
+          // CASTER KURTARMA: giydirme paneli kaplarken panelin alt köşelerindeki
+          // küçük yürütme tekerleklerini (caster) örtüyor. O iki köşe bölgesini
+          // araç render'ından giydirmenin ÜSTÜNE geri çiziyoruz — caster görünür
+          // kalır, panel yine tam dolu. (araç render'ın şeffaf alanı giydirmeyi
+          // gizlemez; sadece opak caster + gövde köşesi üste biner.)
+          if (isWrap && arac.naturalWidth) {
+            const q = view.fullQuad;
+            const xs = [q.tl.x, q.tr.x, q.br.x, q.bl.x];
+            const ys = [q.tl.y, q.tr.y, q.br.y, q.bl.y];
+            const sol = Math.min(...xs);
+            const sag = Math.max(...xs);
+            const alt = Math.max(...ys);
+            const Aw = arac.naturalWidth, Ah = arac.naturalHeight;
+            const ry = alt - 0.05, rh = 0.15, rw = 0.105;
+            for (const rx of [sol - 0.02, sag - 0.085]) {
+              ctx.drawImage(
+                arac,
+                rx * Aw, ry * Ah, rw * Aw, rh * Ah,
+                rx * boxPx, ry * boxPx, rw * boxPx, rh * boxPx,
+              );
+            }
+          }
         };
         ui.src = asset.thumb;
       }
