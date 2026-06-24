@@ -533,19 +533,27 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                       boxPx,
                     );
                     return (
-                      <img
+                      // Wrapper, yüzeyin 4 köşesine (matrix3d) oturur ve overflow:hidden
+                      // ile görseli panelin İÇİNE KIRPAR → taşma fiziksel olarak imkânsız.
+                      // Görsel wrapper'ı kaplar: giydirme cover (oranı korur, panele sığar,
+                      // kenar taşan kısım kırpılır), logo contain (tam görünür, ortalı).
+                      <div
                         key={s.id}
-                        src={asset.thumb}
-                        alt=""
-                        className="absolute top-0 left-0 pointer-events-none"
+                        className="absolute top-0 left-0 pointer-events-none overflow-hidden"
                         style={{
                           width: `${Wsrc}px`,
                           height: `${Hsrc}px`,
-                          objectFit: isWrap ? "fill" : "contain",
                           transformOrigin: "0 0",
                           transform,
                         }}
-                      />
+                      >
+                        <img
+                          src={asset.thumb}
+                          alt=""
+                          className="w-full h-full"
+                          style={{ objectFit: isWrap ? "cover" : "contain" }}
+                        />
+                      </div>
                     );
                   })}
               </div>
