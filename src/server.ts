@@ -76,6 +76,10 @@ export default {
         const { handleMockup } = await import("./lib/mockup-handler");
         return await handleMockup(request, env as { GEMINI_API_KEY?: string });
       }
+      if (url.pathname.startsWith("/api/admin")) {
+        const { handleAdmin } = await import("./lib/admin-handler");
+        return await handleAdmin(request, env as Parameters<typeof handleAdmin>[1]);
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

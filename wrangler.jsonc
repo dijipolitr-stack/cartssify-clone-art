@@ -4,4 +4,11 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rumicarts-db",
+      "database_id": "2f6eef11-4e1d-4532-aa80-5080862bc84a",
+    },
+  ],
 }
