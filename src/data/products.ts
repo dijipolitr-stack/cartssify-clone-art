@@ -43,18 +43,6 @@ const GALLERY_ANGLES = [
 function renderBaseFor(size: "100cm" | "150cm"): string {
   return size === "150cm" ? "/renders/150" : "/renders";
 }
-function heroImageFor(size: "100cm" | "150cm"): string {
-  return `${renderBaseFor(size)}/hero-on.webp`;
-}
-// Ürünler sayfası vitrini — her kart FARKLI bir varyant göstererek çeşitliliği sergiler:
-// boyut (100/150), raf (raflı/rafsız), tente (var/yok), tekerlek (var/yok), renk
-// (mat = beyaz/krem, lake = renkli). Tüm bu render setleri canlıda mevcut.
-const KART_VITRIN: Record<string, string> = {
-  "kart-100-mat-lam": "/renders/100-rafli/hero-on.webp", // 100 raflı, tenteli, tekerlekli, beyaz
-  "kart-100-parlak-lake": "/renders/hero-mavi-on-tenteyok.webp", // 100 rafsız, tentesiz, mavi
-  "kart-150-mat-lam": "/renders/150/hero-on-tekeryok.webp", // 150 raflı, tekerleksiz, beyaz
-  "kart-150-parlak-lake": "/renders/150-rafsiz/hero-kirmizi-on.webp", // 150 rafsız, tenteli, kırmızı
-};
 function galleryFor(size: "100cm" | "150cm"): string[] {
   const base = renderBaseFor(size);
   return GALLERY_ANGLES.map((a) => `${base}/hero-${a}.webp`);
@@ -92,34 +80,10 @@ const DESC_EN =
 const DESC_TR =
   "Tamamen özelleştirilebilir mobil araba. Boyut ve yüzeyi seç; gövde, tente, tekerlek, raf, arka kapak ve metal rengini yapılandır — ve kendi logonu ekle.";
 
-// 4 konfigüre edilebilir ürün — configurator.ts'teki CONFIG_PRODUCTS'tan türetilir.
-const configProducts: Product[] = CONFIG_PRODUCTS.map((cp) => {
-  const specs = specsFor(cp.size);
-  return {
-    slug: cp.slug,
-    title: cp.label.en,
-    price: `${formatPrice(cp.basePrice)} USD`,
-    image: KART_VITRIN[cp.slug] ?? heroImageFor(cp.size),
-    finish: cp.finish,
-    gallery: galleryFor(cp.size),
-    tagline: "Mobile Cart — fully customizable",
-    description: DESC_EN,
-    features: baseFeaturesEn,
-    specs: specs.en,
-    tr: {
-      title: cp.label.tr,
-      tagline: "Mobil Araba — tamamen özelleştirilebilir",
-      description: DESC_TR,
-      features: baseFeatures,
-      specs: specs.tr,
-    },
-  };
-});
-
-// Vitrin (showcase) ürünleri — KONFIGÜRE edilemez ayrı SKU değil; var olan render
-// varyantlarıyla çeşitliliği sergiler (boy/raf/tente/tekerlek/renk). Kart tıklanınca
-// configSlug ile ilgili konfigüratöre (boyut/yüzey ön-seçili) gider.
-function makeShowcase(o: {
+// Ürünler sayfası 4 ANA ürün gösterir: boy (100/150) × tente (var/yok), beyaz.
+// Kart tıklanınca configSlug ile konfigüratör açılır; renk ve diğer tüm özelleştirmeler
+// (tente, tekerlek, raf, arka kapak, metal, mockup) ürün DETAY sayfasında yapılır.
+function makeProduct(o: {
   slug: string;
   configSlug: string;
   size: "100cm" | "150cm";
@@ -152,17 +116,13 @@ function makeShowcase(o: {
   };
 }
 
-const showcaseProducts: Product[] = [
-  makeShowcase({ slug: "vitrin-150-rafli-kirmizi", configSlug: "kart-150-parlak-lake", size: "150cm", image: "/renders/150/hero-kirmizi-on.webp", finish: "lake", titleEn: "150 cm Shelf · Red", titleTr: "150 cm Raflı · Kırmızı" }),
-  makeShowcase({ slug: "vitrin-150-rafli-sade", configSlug: "kart-150-mat-lam", size: "150cm", image: "/renders/150/hero-on-tekeryok-tenteyok.webp", finish: "mat", titleEn: "150 cm Shelf · Minimal (no awning)", titleTr: "150 cm Raflı · Sade (tentesiz)" }),
-  makeShowcase({ slug: "vitrin-150-tutamac-yesil", configSlug: "kart-150-parlak-lake", size: "150cm", image: "/renders/150-rafsiz/hero-yesil-on.webp", finish: "lake", titleEn: "150 cm Handle · Green", titleTr: "150 cm Tutamaçlı · Yeşil" }),
-  makeShowcase({ slug: "vitrin-100-rafli-siyah", configSlug: "kart-100-mat-lam", size: "100cm", image: "/renders/100-rafli/hero-siyah-on.webp", finish: "mat", titleEn: "100 cm Shelf · Black", titleTr: "100 cm Raflı · Siyah" }),
-  makeShowcase({ slug: "vitrin-100-rafli-kirmizi", configSlug: "kart-100-parlak-lake", size: "100cm", image: "/renders/100-rafli/hero-kirmizi-on-tenteyok.webp", finish: "lake", titleEn: "100 cm Shelf · Red (no awning)", titleTr: "100 cm Raflı · Kırmızı (tentesiz)" }),
-  makeShowcase({ slug: "vitrin-100-tutamac-yesil", configSlug: "kart-100-mat-lam", size: "100cm", image: "/renders/hero-yesil-on-tekeryok.webp", finish: "mat", titleEn: "100 cm Handle · Green (no wheels)", titleTr: "100 cm Tutamaçlı · Yeşil (tekerleksiz)" }),
+// 4 ANA ürün: 100/150 cm × tenteli/tentesiz, beyaz. Detayda renk + tüm özelleştirme.
+export const products: Product[] = [
+  makeProduct({ slug: "kart-150-tenteli", configSlug: "kart-150-mat-lam", size: "150cm", image: "/renders/150/hero-on.webp", finish: "mat", titleEn: "150 cm — With Awning", titleTr: "150 cm — Tenteli" }),
+  makeProduct({ slug: "kart-150-tentesiz", configSlug: "kart-150-mat-lam", size: "150cm", image: "/renders/150/hero-on-tenteyok.webp", finish: "mat", titleEn: "150 cm — No Awning", titleTr: "150 cm — Tentesiz" }),
+  makeProduct({ slug: "kart-100-tenteli", configSlug: "kart-100-mat-lam", size: "100cm", image: "/renders/100-rafli/hero-on.webp", finish: "mat", titleEn: "100 cm — With Awning", titleTr: "100 cm — Tenteli" }),
+  makeProduct({ slug: "kart-100-tentesiz", configSlug: "kart-100-mat-lam", size: "100cm", image: "/renders/100-rafli/hero-on-tenteyok.webp", finish: "mat", titleEn: "100 cm — No Awning", titleTr: "100 cm — Tentesiz" }),
 ];
-
-// Vitrin: önce 4 konfigüre ürün, sonra 6 çeşitli showcase = 10 kart.
-export const products: Product[] = [...configProducts, ...showcaseProducts];
 
 export function getProduct(slug: string) {
   return products.find((p) => p.slug === slug);
