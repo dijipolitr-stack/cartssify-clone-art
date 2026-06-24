@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Product } from "@/data/products";
 import { useCart } from "@/lib/cart";
@@ -29,54 +29,45 @@ import {
 type AssetKind = "logo" | "giydirme";
 type Asset = { name: string; thumb: string };
 
-// --- Perspektif (homografi) yardımcıları -------------------------------
-// Logoyu bir yüzeyin 4 köşesine (quad) yatık oturtmak için, birim kareyi
-// hedef dörtgene eşleyen projektif dönüşümü hesaplayıp CSS matrix3d üretir.
-// Kaynak <img> kutusu quad'ın yaklaşık en/boyuna göre boyutlandırılır
-// (object-fit: contain → logo en-boy oranı korunur), sonra warp edilir.
-function unitToQuad(p: {
-  x0: number; y0: number; x1: number; y1: number;
-  x2: number; y2: number; x3: number; y3: number;
-}) {
-  const dx1 = p.x1 - p.x2, dx2 = p.x3 - p.x2, sx = p.x0 - p.x1 + p.x2 - p.x3;
-  const dy1 = p.y1 - p.y2, dy2 = p.y3 - p.y2, sy = p.y0 - p.y1 + p.y2 - p.y3;
-  let a, b, c, d, e, f, g, h;
-  if (Math.abs(sx) < 1e-9 && Math.abs(sy) < 1e-9) {
-    a = p.x1 - p.x0; b = p.x2 - p.x1; c = p.x0;
-    d = p.y1 - p.y0; e = p.y2 - p.y1; f = p.y0;
-    g = 0; h = 0;
-  } else {
-    const den = dx1 * dy2 - dx2 * dy1;
-    g = (sx * dy2 - dx2 * sy) / den;
-    h = (dx1 * sy - sx * dy1) / den;
-    a = p.x1 - p.x0 + g * p.x1;
-    b = p.x3 - p.x0 + h * p.x3;
-    c = p.x0;
-    d = p.y1 - p.y0 + g * p.y1;
-    e = p.y3 - p.y0 + h * p.y3;
-    f = p.y0;
-  }
-  return { a, b, c, d, e, f, g, h };
+// --- Canvas kompozit yardımcıları --------------------------------------
+// Quad'ın eksen-hizalı sınır kutusunu (bounding box) piksel olarak döndürür.
+// Araç ön yüzü neredeyse dikdörtgen olduğu için bu kutu = sabit çerçeve.
+function quadBox(quad: Quad, boxPx: number) {
+  const xs = [quad.tl.x, quad.tr.x, quad.br.x, quad.bl.x];
+  const ys = [quad.tl.y, quad.tr.y, quad.br.y, quad.bl.y];
+  const L = Math.min(...xs), T = Math.min(...ys);
+  return {
+    dx: L * boxPx,
+    dy: T * boxPx,
+    dw: (Math.max(...xs) - L) * boxPx,
+    dh: (Math.max(...ys) - T) * boxPx,
+  };
 }
 
-function quadWarp(quad: Quad, boxPx: number) {
-  const tl = { x: quad.tl.x * boxPx, y: quad.tl.y * boxPx };
-  const tr = { x: quad.tr.x * boxPx, y: quad.tr.y * boxPx };
-  const br = { x: quad.br.x * boxPx, y: quad.br.y * boxPx };
-  const bl = { x: quad.bl.x * boxPx, y: quad.bl.y * boxPx };
-  const Wsrc = Math.max(Math.hypot(tr.x - tl.x, tr.y - tl.y), Math.hypot(br.x - bl.x, br.y - bl.y)) || 1;
-  const Hsrc = Math.max(Math.hypot(bl.x - tl.x, bl.y - tl.y), Math.hypot(br.x - tr.x, br.y - tr.y)) || 1;
-  const m = unitToQuad({
-    x0: tl.x, y0: tl.y, x1: tr.x, y1: tr.y,
-    x2: br.x, y2: br.y, x3: bl.x, y3: bl.y,
-  });
-  const mat = [
-    m.a / Wsrc, m.d / Wsrc, 0, m.g / Wsrc,
-    m.b / Hsrc, m.e / Hsrc, 0, m.h / Hsrc,
-    0, 0, 1, 0,
-    m.c, m.f, 0, 1,
-  ];
-  return { transform: `matrix3d(${mat.join(",")})`, Wsrc, Hsrc };
+// Bir görseli hedef dikdörtgene (dx,dy,dw,dh) çizer. cover=true → görselin
+// oranını koruyup çerçeveyi TAM doldurur (taşan kısım kaynaktan kırpılır) →
+// giydirme: panelde boşluk kalmaz. cover=false → çerçeveye sığdırıp ortalar
+// (logo: tam görünür). Canvas explicit piksel koordinatı kullandığı için
+// CSS object-contain ölçek/offset kayması yaşanmaz.
+function drawFit(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  dx: number, dy: number, dw: number, dh: number,
+  cover: boolean,
+) {
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  if (!iw || !ih || dw <= 0 || dh <= 0) return;
+  const ar = iw / ih, tr = dw / dh;
+  if (cover) {
+    let sx = 0, sy = 0, sw = iw, sh = ih;
+    if (ar > tr) { sw = ih * tr; sx = (iw - sw) / 2; }
+    else { sh = iw / tr; sy = (ih - sh) / 2; }
+    ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+  } else {
+    let w = dw, h = dh;
+    if (ar > tr) h = dw / ar; else w = dh * ar;
+    ctx.drawImage(img, dx + (dw - w) / 2, dy + (dh - h) / 2, w, h);
+  }
 }
 
 type Props = {
@@ -113,6 +104,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   // Callback ref: Radix portal içeriği mount olduğunda kesin çağrılır (useEffect +
   // useRef kombinasyonu portal timing'inde boxRef.current'ı null görüp ölçemiyordu).
   const [boxPx, setBoxPx] = useState(0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const roRef = useRef<ResizeObserver | null>(null);
   const measureBox = useCallback((el: HTMLDivElement | null) => {
     roRef.current?.disconnect();
@@ -224,6 +216,65 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     hasAsset && mockupAngles.size > 0
       ? ANGLES.filter((a) => mockupAngles.has(a.id))
       : ANGLES;
+
+  // --- Canvas kompozit önizleme -----------------------------------------
+  // Araç render'ı canvas'a EXPLICIT (0,0,boxPx,boxPx) çizilir → CSS object-contain
+  // ölçek/offset kayması olmaz. Aktif yüzeylerin görselleri quad bounding box'ına
+  // (sabit çerçeve) drawFit ile cover/contain olarak basılır → panel tam dolar.
+  useEffect(() => {
+    const cv = canvasRef.current;
+    if (!cv || boxPx <= 0) return;
+    const ctx = cv.getContext("2d");
+    if (!ctx) return;
+    const dpr = Math.min(
+      typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1,
+      2,
+    );
+    cv.width = Math.round(boxPx * dpr);
+    cv.height = Math.round(boxPx * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    let cancelled = false;
+
+    const drawSurfaces = () => {
+      for (const s of activeSurfaces) {
+        const fill = surfaces[s.id] as AssetKind;
+        const asset = assets[fill];
+        const view = s.views[angle];
+        if (!asset || !view) continue;
+        const isWrap = fill === "giydirme";
+        const { dx, dy, dw, dh } = quadBox(
+          isWrap ? view.fullQuad : view.quad,
+          boxPx,
+        );
+        const ui = new Image();
+        ui.onload = () => {
+          if (!cancelled) drawFit(ctx, ui, dx, dy, dw, dh, isWrap);
+        };
+        ui.src = asset.thumb;
+      }
+    };
+
+    const arac = new Image();
+    arac.onload = () => {
+      if (cancelled) return;
+      ctx.clearRect(0, 0, boxPx, boxPx);
+      ctx.drawImage(arac, 0, 0, boxPx, boxPx);
+      drawSurfaces();
+    };
+    // Varyant render seti yoksa (-nologo / -tenteyok / -tekeryok) en yakına düş.
+    arac.onerror = () => {
+      if (cancelled) return;
+      let src = arac.src;
+      if (src.includes("-nologo")) src = src.replace("-nologo", "");
+      else if (src.includes("-tenteyok")) src = src.replace("-tenteyok", "");
+      else if (src.includes("-tekeryok")) src = src.replace("-tekeryok", "");
+      if (src !== arac.src) arac.src = src;
+    };
+    arac.src = previewSrc;
+    return () => {
+      cancelled = true;
+    };
+  }, [previewSrc, angle, boxPx, surfaces, assets, activeSurfaces]);
 
   // --- Handlers ---------------------------------------------------------
   const choose = (criterion: CriterionId, valueId: string) =>
@@ -491,76 +542,19 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
           <div className="bg-secondary flex flex-col">
             <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden min-h-[320px]">
               <div ref={measureBox} className="relative w-full max-w-md aspect-square">
-                <img
-                  src={previewSrc}
-                  alt={`${pick(getConfigProduct(productId).label, locale)} — ${angle}`}
-                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                {/* Canvas kompozit: araç render'ı + logo/giydirme görselleri tek
+                    canvas'a explicit piksel koordinatıyla çizilir (useEffect).
+                    CSS object-contain ölçek kayması olmaz → giydirme paneli tam
+                    doldurur. Çizim previewSrc/açı/yüzey/görsel değiştikçe yenilenir. */}
+                <canvas
+                  ref={canvasRef}
+                  className="absolute inset-0 w-full h-full pointer-events-none"
                   style={
                     isLake
                       ? { filter: "contrast(1.1) saturate(1.12) brightness(1.03)" }
                       : undefined
                   }
-                  onError={(e) => {
-                    // Varyant render seti henüz çekilmediyse (örn. -tenteyok) en
-                    // yakın mevcut görsele düş: önce tente sonekini, sonra tekerlek
-                    // sonekini at. Render eklenince otomatik doğru görsel gelir.
-                    const img = e.currentTarget;
-                    if (img.src.includes("-nologo")) {
-                      img.src = img.src.replace("-nologo", "");
-                    } else if (img.src.includes("-tenteyok")) {
-                      img.src = img.src.replace("-tenteyok", "");
-                    } else if (img.src.includes("-tekeryok")) {
-                      img.src = img.src.replace("-tekeryok", "");
-                    }
-                  }}
                 />
-                {/* Logo/giydirme overlay'leri — yüzeyin 4 köşesine perspektif
-                    (homografi) ile oturur. Logo: ortalı, oranı korunur (contain);
-                    giydirme: yüzeyi tam kaplar (cover). Yüklenen görsel sadık
-                    görünsün diye normal blend (kırpma/maske yok). */}
-                {boxPx > 0 &&
-                  activeSurfaces.map((s) => {
-                    const fill = surfaces[s.id] as AssetKind;
-                    const asset = assets[fill];
-                    if (!asset) return null;
-                    const view = s.views[angle];
-                    if (!view) return null;
-                    const isWrap = fill === "giydirme";
-                    // BASİT ÇERÇEVE: araç ön yüzü ölçüsü sabit → quad'ın bounding box'ı
-                    // (sol/üst + en/boy) bir dikdörtgen çerçeve oluşturur. matrix3d perspektif
-                    // yöntemi tarayıcıda görseli çerçeveye tam oturtmuyordu; düz dikdörtgen +
-                    // overflow:hidden ile görsel çerçeveyi GARANTİ tam doldurur (boşluk yok).
-                    const q = isWrap ? view.fullQuad : view.quad;
-                    const xs = [q.tl.x, q.tr.x, q.br.x, q.bl.x];
-                    const ys = [q.tl.y, q.tr.y, q.br.y, q.bl.y];
-                    const L = Math.min(...xs) * boxPx;
-                    const T = Math.min(...ys) * boxPx;
-                    const W = (Math.max(...xs) - Math.min(...xs)) * boxPx;
-                    const H = (Math.max(...ys) - Math.min(...ys)) * boxPx;
-                    return (
-                      <div
-                        key={s.id}
-                        className="absolute pointer-events-none overflow-hidden"
-                        style={{
-                          left: `${L}px`,
-                          top: `${T}px`,
-                          width: `${W}px`,
-                          height: `${H}px`,
-                        }}
-                      >
-                        <img
-                          src={asset.thumb}
-                          alt=""
-                          style={{
-                            display: "block",
-                            width: "100%",
-                            height: "100%",
-                            objectFit: isWrap ? "cover" : "contain",
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
               </div>
 
               {/* Açı seçici (mockup modunda yalnızca foto'nun oturduğu açılar) */}
