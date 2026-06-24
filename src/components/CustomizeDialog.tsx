@@ -550,8 +550,12 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                         <img
                           src={asset.thumb}
                           alt=""
-                          className="w-full h-full"
-                          style={{ objectFit: isWrap ? "cover" : "contain" }}
+                          style={{
+                            display: "block",
+                            width: "100%",
+                            height: "100%",
+                            objectFit: isWrap ? "cover" : "contain",
+                          }}
                         />
                       </div>
                     );
