@@ -720,8 +720,18 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
             </div>
 
             <div className="bg-background border-t border-border p-6">
-              <div className="flex items-baseline justify-between mb-4">
-                <span className="text-xs tracking-[0.2em] uppercase text-muted-foreground">
+              {/* Birim (aracın temel fiyatı) + Toplam (seçeneklerle). Kullanıcı
+                  seçenek tıkladıkça Toplam değişir, Birim sabit kalır. */}
+              <div className="flex items-baseline justify-between mb-1">
+                <span className="text-[11px] tracking-[0.15em] uppercase text-muted-foreground">
+                  {locale === "tr" ? "Birim fiyat" : "Base price"}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {formatPrice(getConfigProduct(productId).basePrice)}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between mb-4 pt-1 border-t border-border/60">
+                <span className="text-xs tracking-[0.2em] uppercase text-foreground">
                   {ui.total}
                 </span>
                 <span className="text-2xl font-light">{formatPrice(total)}</span>
