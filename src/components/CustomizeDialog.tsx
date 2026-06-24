@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useMemo, useState, type ChangeEvent } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Product } from "@/data/products";
 import { useCart } from "@/lib/cart";
@@ -30,44 +30,16 @@ type AssetKind = "logo" | "giydirme";
 type Asset = { name: string; thumb: string };
 
 // --- Canvas kompozit yardımcıları --------------------------------------
-// Quad'ın eksen-hizalı sınır kutusunu (bounding box) piksel olarak döndürür.
-// Araç ön yüzü neredeyse dikdörtgen olduğu için bu kutu = sabit çerçeve.
-function quadBox(quad: Quad, boxPx: number) {
+// Bir yüzeyin (gövde/tente ön yüzü) en/boy oranını döndürür — DÜZ BASKI ALANI
+// editörü bu oranda bir dikdörtgen çizer. fullQuad sınır kutusu render'dan
+// ölçülmüş gerçek panel ölçüsüdür; ön açı neredeyse düz olduğu için bu oran
+// aracın fiziksel ön yüz en/boy oranına çok yakındır.
+function faceRatio(quad: Quad): number {
   const xs = [quad.tl.x, quad.tr.x, quad.br.x, quad.bl.x];
   const ys = [quad.tl.y, quad.tr.y, quad.br.y, quad.bl.y];
-  const L = Math.min(...xs), T = Math.min(...ys);
-  return {
-    dx: L * boxPx,
-    dy: T * boxPx,
-    dw: (Math.max(...xs) - L) * boxPx,
-    dh: (Math.max(...ys) - T) * boxPx,
-  };
-}
-
-// Bir görseli hedef dikdörtgene (dx,dy,dw,dh) çizer. cover=true → görselin
-// oranını koruyup çerçeveyi TAM doldurur (taşan kısım kaynaktan kırpılır) →
-// giydirme: panelde boşluk kalmaz. cover=false → çerçeveye sığdırıp ortalar
-// (logo: tam görünür). Canvas explicit piksel koordinatı kullandığı için
-// CSS object-contain ölçek/offset kayması yaşanmaz.
-function drawFit(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  dx: number, dy: number, dw: number, dh: number,
-  cover: boolean,
-) {
-  const iw = img.naturalWidth, ih = img.naturalHeight;
-  if (!iw || !ih || dw <= 0 || dh <= 0) return;
-  const ar = iw / ih, tr = dw / dh;
-  if (cover) {
-    let sx = 0, sy = 0, sw = iw, sh = ih;
-    if (ar > tr) { sw = ih * tr; sx = (iw - sw) / 2; }
-    else { sh = iw / tr; sy = (ih - sh) / 2; }
-    ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
-  } else {
-    let w = dw, h = dh;
-    if (ar > tr) h = dw / ar; else w = dh * ar;
-    ctx.drawImage(img, dx + (dw - w) / 2, dy + (dh - h) / 2, w, h);
-  }
+  const w = Math.max(...xs) - Math.min(...xs);
+  const h = Math.max(...ys) - Math.min(...ys);
+  return h > 0 ? w / h : 1;
 }
 
 type Props = {
@@ -99,20 +71,6 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   });
   const [notes, setNotes] = useState("");
   const [angle, setAngle] = useState<AngleId>("on");
-
-  // Önizleme kutusunun piksel boyutu (kare) — logo perspektifini px'e çevirmek için.
-  // Callback ref: Radix portal içeriği mount olduğunda kesin çağrılır (useEffect +
-  // useRef kombinasyonu portal timing'inde boxRef.current'ı null görüp ölçemiyordu).
-  const [boxPx, setBoxPx] = useState(0);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const roRef = useRef<ResizeObserver | null>(null);
-  const measureBox = useCallback((el: HTMLDivElement | null) => {
-    roRef.current?.disconnect();
-    if (!el) return;
-    setBoxPx(el.clientWidth);
-    roRef.current = new ResizeObserver(() => setBoxPx(el.clientWidth));
-    roRef.current.observe(el);
-  }, []);
 
   const { addItem, openCart } = useCart();
 
@@ -217,64 +175,18 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
       ? ANGLES.filter((a) => mockupAngles.has(a.id))
       : ANGLES;
 
-  // --- Canvas kompozit önizleme -----------------------------------------
-  // Araç render'ı canvas'a EXPLICIT (0,0,boxPx,boxPx) çizilir → CSS object-contain
-  // ölçek/offset kayması olmaz. Aktif yüzeylerin görselleri quad bounding box'ına
-  // (sabit çerçeve) drawFit ile cover/contain olarak basılır → panel tam dolar.
-  useEffect(() => {
-    const cv = canvasRef.current;
-    if (!cv || boxPx <= 0) return;
-    const ctx = cv.getContext("2d");
-    if (!ctx) return;
-    const dpr = Math.min(
-      typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1,
-      2,
-    );
-    cv.width = Math.round(boxPx * dpr);
-    cv.height = Math.round(boxPx * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    let cancelled = false;
+  // Görsel yüklenip bir yüzeye atandığında DÜZ BASKI ALANI editörüne geçilir
+  // (araç render'ı küçük bağlam olarak kalır). Araç üstüne bindirme yapılmaz →
+  // perspektif/oturma/köşe sorunu olmaz; görsel düz dikdörtgene tam oturur.
+  const mockupMode = activeSurfaces.length > 0;
 
-    const drawSurfaces = () => {
-      for (const s of activeSurfaces) {
-        const fill = surfaces[s.id] as AssetKind;
-        const asset = assets[fill];
-        const view = s.views[angle];
-        if (!asset || !view) continue;
-        const isWrap = fill === "giydirme";
-        const { dx, dy, dw, dh } = quadBox(
-          isWrap ? view.fullQuad : view.quad,
-          boxPx,
-        );
-        const ui = new Image();
-        ui.onload = () => {
-          if (!cancelled) drawFit(ctx, ui, dx, dy, dw, dh, isWrap);
-        };
-        ui.src = asset.thumb;
-      }
-    };
-
-    const arac = new Image();
-    arac.onload = () => {
-      if (cancelled) return;
-      ctx.clearRect(0, 0, boxPx, boxPx);
-      ctx.drawImage(arac, 0, 0, boxPx, boxPx);
-      drawSurfaces();
-    };
-    // Varyant render seti yoksa (-nologo / -tenteyok / -tekeryok) en yakına düş.
-    arac.onerror = () => {
-      if (cancelled) return;
-      let src = arac.src;
-      if (src.includes("-nologo")) src = src.replace("-nologo", "");
-      else if (src.includes("-tenteyok")) src = src.replace("-tenteyok", "");
-      else if (src.includes("-tekeryok")) src = src.replace("-tekeryok", "");
-      if (src !== arac.src) arac.src = src;
-    };
-    arac.src = previewSrc;
-    return () => {
-      cancelled = true;
-    };
-  }, [previewSrc, angle, boxPx, surfaces, assets, activeSurfaces]);
+  // Araç görseli bulunamazsa (varyant render eksik) en yakına düşen onError.
+  const onArtworkError = (e: { currentTarget: HTMLImageElement }) => {
+    const img = e.currentTarget;
+    if (img.src.includes("-nologo")) img.src = img.src.replace("-nologo", "");
+    else if (img.src.includes("-tenteyok")) img.src = img.src.replace("-tenteyok", "");
+    else if (img.src.includes("-tekeryok")) img.src = img.src.replace("-tekeryok", "");
+  };
 
   // --- Handlers ---------------------------------------------------------
   const choose = (criterion: CriterionId, valueId: string) =>
@@ -541,20 +453,71 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
           {/* ---- Sağ: önizleme ---- */}
           <div className="bg-secondary flex flex-col">
             <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden min-h-[320px]">
-              <div ref={measureBox} className="relative w-full max-w-md aspect-square">
-                {/* Canvas kompozit: araç render'ı + logo/giydirme görselleri tek
-                    canvas'a explicit piksel koordinatıyla çizilir (useEffect).
-                    CSS object-contain ölçek kayması olmaz → giydirme paneli tam
-                    doldurur. Çizim previewSrc/açı/yüzey/görsel değiştikçe yenilenir. */}
-                <canvas
-                  ref={canvasRef}
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                  style={
-                    isLake
-                      ? { filter: "contrast(1.1) saturate(1.12) brightness(1.03)" }
-                      : undefined
-                  }
-                />
+              <div className="relative w-full max-w-md">
+                {mockupMode ? (
+                  // DÜZ BASKI ALANI EDİTÖRÜ: araç render'ı küçük bağlam olarak üstte,
+                  // altında her yüzey için gerçek en/boy oranında DÜZ bir baskı alanı.
+                  // Görsel bu dikdörtgene tam oturur — bindirme/perspektif/oturma yok.
+                  <div className="flex flex-col gap-3">
+                    <div className="relative w-1/2 mx-auto aspect-square">
+                      <img
+                        src={previewSrc}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-contain"
+                        style={
+                          isLake
+                            ? { filter: "contrast(1.1) saturate(1.12) brightness(1.03)" }
+                            : undefined
+                        }
+                        onError={onArtworkError}
+                      />
+                    </div>
+                    {activeSurfaces.map((s) => {
+                      const fill = surfaces[s.id] as AssetKind;
+                      const asset = assets[fill];
+                      const view = s.views[angle];
+                      if (!asset || !view) return null;
+                      const isWrap = fill === "giydirme";
+                      return (
+                        <div key={s.id}>
+                          <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground mb-1 text-center">
+                            {pick(s.label, locale)} ·{" "}
+                            {isWrap ? ui.labelGiydirme : ui.labelLogo}
+                          </div>
+                          <div
+                            className="relative w-full overflow-hidden border-2 border-dashed border-foreground/30 bg-background"
+                            style={{
+                              aspectRatio: String(
+                                faceRatio(isWrap ? view.fullQuad : view.quad),
+                              ),
+                            }}
+                          >
+                            <img
+                              src={asset.thumb}
+                              alt=""
+                              className="absolute inset-0 w-full h-full"
+                              style={{ objectFit: isWrap ? "cover" : "contain" }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="relative aspect-square">
+                    <img
+                      src={previewSrc}
+                      alt={`${pick(getConfigProduct(productId).label, locale)} — ${angle}`}
+                      className="absolute inset-0 w-full h-full object-contain"
+                      style={
+                        isLake
+                          ? { filter: "contrast(1.1) saturate(1.12) brightness(1.03)" }
+                          : undefined
+                      }
+                      onError={onArtworkError}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Açı seçici (mockup modunda yalnızca foto'nun oturduğu açılar) */}
