@@ -120,8 +120,8 @@ function makeProduct(o: {
 export const products: Product[] = [
   makeProduct({ slug: "kart-150-tenteli", configSlug: "kart-150-mat-lam", size: "150cm", image: "/renders/150/hero-on.webp", finish: "mat", titleEn: "150 cm — With Awning", titleTr: "150 cm — Tenteli" }),
   makeProduct({ slug: "kart-150-tentesiz", configSlug: "kart-150-mat-lam", size: "150cm", image: "/renders/150/hero-on-tenteyok.webp", finish: "mat", titleEn: "150 cm — No Awning", titleTr: "150 cm — Tentesiz" }),
-  makeProduct({ slug: "kart-100-tenteli", configSlug: "kart-100-mat-lam", size: "100cm", image: "/renders/100-rafli/hero-on.webp", finish: "mat", titleEn: "100 cm — With Awning", titleTr: "100 cm — Tenteli" }),
-  makeProduct({ slug: "kart-100-tentesiz", configSlug: "kart-100-mat-lam", size: "100cm", image: "/renders/100-rafli/hero-on-tenteyok.webp", finish: "mat", titleEn: "100 cm — No Awning", titleTr: "100 cm — Tentesiz" }),
+  makeProduct({ slug: "kart-100-tenteli", configSlug: "kart-100-mat-lam", size: "100cm", image: "/renders/hero-on.webp", finish: "mat", titleEn: "100 cm — With Awning", titleTr: "100 cm — Tenteli" }),
+  makeProduct({ slug: "kart-100-tentesiz", configSlug: "kart-100-mat-lam", size: "100cm", image: "/renders/hero-on-tenteyok.webp", finish: "mat", titleEn: "100 cm — No Awning", titleTr: "100 cm — Tentesiz" }),
 ];
 
 export function getProduct(slug: string) {
