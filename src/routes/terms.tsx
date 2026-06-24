@@ -6,7 +6,7 @@ export const Route = createFileRoute("/terms")({
   component: TermsPage,
   head: () => ({
     meta: [
-      { title: "Terms of Service — Rumicarts" },
+      { title: "Rumicarts — Terms of Service" },
       { name: "description", content: "Terms that apply when you order from Rumicarts." },
     ],
   }),

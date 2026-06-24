@@ -18,12 +18,12 @@ export const Route = createFileRoute("/products/$slug")({
   },
   head: ({ loaderData }) => {
     const p = loaderData?.product;
-    if (!p) return { meta: [{ title: "Product — Rumicarts" }] };
+    if (!p) return { meta: [{ title: "Rumicarts — Product" }] };
     return {
       meta: [
-        { title: `${p.title} — Rumicarts` },
+        { title: `Rumicarts — ${p.title}` },
         { name: "description", content: p.tagline ?? p.description.slice(0, 150) },
-        { property: "og:title", content: `${p.title} — Rumicarts` },
+        { property: "og:title", content: `Rumicarts — ${p.title}` },
         { property: "og:description", content: p.tagline ?? p.description.slice(0, 150) },
         { property: "og:image", content: p.image },
         { name: "twitter:image", content: p.image },

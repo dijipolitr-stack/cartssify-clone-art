@@ -9,7 +9,7 @@ export const Route = createFileRoute("/products/")({
   component: ProductsPage,
   head: () => ({
     meta: [
-      { title: "All Products — Rumicarts" },
+      { title: "Rumicarts — All Products" },
       {
         name: "description",
         content:

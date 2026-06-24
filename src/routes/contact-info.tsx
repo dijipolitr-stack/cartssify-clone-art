@@ -6,7 +6,7 @@ export const Route = createFileRoute("/contact-info")({
   component: ContactInfoPage,
   head: () => ({
     meta: [
-      { title: "Contact Information — Rumicarts" },
+      { title: "Rumicarts — Contact Information" },
       { name: "description", content: "How to reach Rumicarts." },
     ],
   }),

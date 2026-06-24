@@ -6,7 +6,7 @@ export const Route = createFileRoute("/shipping")({
   component: ShippingPage,
   head: () => ({
     meta: [
-      { title: "Shipping Policy — Rumicarts" },
+      { title: "Rumicarts — Shipping Policy" },
       { name: "description", content: "How Rumicarts ships worldwide — lead times, carriers, and customs." },
     ],
   }),

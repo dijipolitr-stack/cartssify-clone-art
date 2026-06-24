@@ -9,7 +9,7 @@ export const Route = createFileRoute("/faq")({
   component: FaqPage,
   head: () => ({
     meta: [
-      { title: "FAQ — Rumicarts" },
+      { title: "Rumicarts — FAQ" },
       {
         name: "description",
         content:

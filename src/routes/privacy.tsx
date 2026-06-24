@@ -6,7 +6,7 @@ export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
   head: () => ({
     meta: [
-      { title: "Privacy Policy — Rumicarts" },
+      { title: "Rumicarts — Privacy Policy" },
       { name: "description", content: "How Rumicarts collects, uses, and protects your information." },
     ],
   }),

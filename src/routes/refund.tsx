@@ -6,7 +6,7 @@ export const Route = createFileRoute("/refund")({
   component: RefundPage,
   head: () => ({
     meta: [
-      { title: "Refund Policy — Rumicarts" },
+      { title: "Rumicarts — Refund Policy" },
       { name: "description", content: "Our refund policy for custom-built carts." },
     ],
   }),
