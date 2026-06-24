@@ -278,7 +278,7 @@ export const MOCKUP_SURFACES: MockupSurface[] = [
   // overlay sadece "on" açısında bindirilir (kullanıcı kararı: ön açıya odakla).
   { id: "govde-on", group: "govde", label: { tr: "Gövde Ön Yüzü", en: "Body Front" }, views: {
       "on": { quad: { tl: { x: 0.448, y: 0.585 }, tr: { x: 0.552, y: 0.585 }, br: { x: 0.552, y: 0.682 }, bl: { x: 0.448, y: 0.682 } },
-              fullQuad: { tl: { x: 0.402, y: 0.557 }, tr: { x: 0.602, y: 0.557 }, br: { x: 0.602, y: 0.713 }, bl: { x: 0.402, y: 0.713 } } },
+              fullQuad: { tl: { x: 0.385, y: 0.555 }, tr: { x: 0.615, y: 0.555 }, br: { x: 0.615, y: 0.725 }, bl: { x: 0.385, y: 0.725 } } },
   } },
   // Tente Ön yüzü — yalnızca ön açıda. Çatı ön yüzü (sırt→saçak) gerçek köşelere kalibre.
   { id: "tente-on", group: "tente", label: { tr: "Tente Ön Yüzü", en: "Awning Front" }, views: {
@@ -341,7 +341,7 @@ export const MOCKUP_SURFACES_150_RAFSIZ: MockupSurface[] = [
 export const MOCKUP_SURFACES_100_RAFLI: MockupSurface[] = [
   { id: "govde-on", group: "govde", label: { tr: "Gövde Ön Yüzü", en: "Body Front" }, views: {
       "on": { quad: { tl: { x: 0.435, y: 0.602 }, tr: { x: 0.575, y: 0.602 }, br: { x: 0.575, y: 0.665 }, bl: { x: 0.435, y: 0.665 } },
-              fullQuad: { tl: { x: 0.395, y: 0.560 }, tr: { x: 0.610, y: 0.560 }, br: { x: 0.610, y: 0.715 }, bl: { x: 0.395, y: 0.715 } } },
+              fullQuad: { tl: { x: 0.405, y: 0.555 }, tr: { x: 0.615, y: 0.555 }, br: { x: 0.615, y: 0.72 }, bl: { x: 0.405, y: 0.72 } } },
   } },
   { id: "tente-on", group: "tente", label: { tr: "Tente Ön Yüzü", en: "Awning Front" }, views: {
       "on": { quad: { tl: { x: 0.417, y: 0.308 }, tr: { x: 0.583, y: 0.308 }, br: { x: 0.583, y: 0.344 }, bl: { x: 0.417, y: 0.344 } },
