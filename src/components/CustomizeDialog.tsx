@@ -615,10 +615,16 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
               <div ref={measureBox} className="relative w-full max-w-md aspect-square">
                 {mockupResult ? (
                   // Gemini ile üretilmiş GERÇEKÇİ mockup (perspektif + ışık/gölge).
+                  // Lake (parlak) yüzeyde aynı kontrast/parlaklık filtresi uygulanır.
                   <img
                     src={mockupResult}
                     alt="mockup"
                     className="absolute inset-0 w-full h-full object-contain"
+                    style={
+                      isLake
+                        ? { filter: "contrast(1.1) saturate(1.12) brightness(1.03)" }
+                        : undefined
+                    }
                   />
                 ) : (
                   // Anlık kaba önizleme: araç render'ı + görsel canvas'a bindirilir.
