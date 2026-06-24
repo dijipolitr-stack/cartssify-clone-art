@@ -299,7 +299,7 @@ export const MOCKUP_SURFACES: MockupSurface[] = [
 export const MOCKUP_SURFACES_150: MockupSurface[] = [
   { id: "govde-on", group: "govde", label: { tr: "Gövde Ön Yüzü", en: "Body Front" }, views: {
       "on": { quad: { tl: { x: 0.418, y: 0.601 }, tr: { x: 0.581, y: 0.601 }, br: { x: 0.581, y: 0.672 }, bl: { x: 0.418, y: 0.672 } },
-              fullQuad: { tl: { x: 0.336, y: 0.558 }, tr: { x: 0.663, y: 0.558 }, br: { x: 0.663, y: 0.805 }, bl: { x: 0.336, y: 0.805 } } },
+              fullQuad: { tl: { x: 0.336, y: 0.558 }, tr: { x: 0.682, y: 0.558 }, br: { x: 0.682, y: 0.765 }, bl: { x: 0.336, y: 0.765 } } },
   } },
   { id: "tente-on", group: "tente", label: { tr: "Tente Ön Yüzü", en: "Awning Front" }, views: {
       "on": { quad: { tl: { x: 0.417, y: 0.308 }, tr: { x: 0.583, y: 0.308 }, br: { x: 0.583, y: 0.344 }, bl: { x: 0.417, y: 0.344 } },
@@ -318,7 +318,7 @@ export const MOCKUP_SURFACES_150: MockupSurface[] = [
 export const MOCKUP_SURFACES_150_RAFSIZ: MockupSurface[] = [
   { id: "govde-on", group: "govde", label: { tr: "Gövde Ön Yüzü", en: "Body Front" }, views: {
       "on": { quad: { tl: { x: 0.418, y: 0.601 }, tr: { x: 0.581, y: 0.601 }, br: { x: 0.581, y: 0.672 }, bl: { x: 0.418, y: 0.672 } },
-              fullQuad: { tl: { x: 0.336, y: 0.558 }, tr: { x: 0.663, y: 0.558 }, br: { x: 0.663, y: 0.805 }, bl: { x: 0.336, y: 0.805 } } },
+              fullQuad: { tl: { x: 0.336, y: 0.558 }, tr: { x: 0.682, y: 0.558 }, br: { x: 0.682, y: 0.765 }, bl: { x: 0.336, y: 0.765 } } },
   } },
   { id: "tente-on", group: "tente", label: { tr: "Tente Ön Yüzü", en: "Awning Front" }, views: {
       "on": { quad: { tl: { x: 0.417, y: 0.308 }, tr: { x: 0.583, y: 0.308 }, br: { x: 0.583, y: 0.344 }, bl: { x: 0.417, y: 0.344 } },
