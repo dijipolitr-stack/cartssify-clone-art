@@ -104,6 +104,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   const [mockupResult, setMockupResult] = useState<string | null>(null);
   const [mockupLoading, setMockupLoading] = useState(false);
   const [mockupError, setMockupError] = useState<string | null>(null);
+  const [mockupElapsed, setMockupElapsed] = useState(0);
 
   // Önizleme kutusunun piksel boyutu (kare) — logo perspektifini px'e çevirmek için.
   // Callback ref: Radix portal içeriği mount olduğunda kesin çağrılır (useEffect +
@@ -303,6 +304,16 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
       cancelled = true;
     };
   }, [previewSrc, angle, boxPx, surfaces, assets, activeSurfaces]);
+
+  // Mockup üretilirken geçen saniyeyi say (kullanıcıya "gerçekten çalışıyor" hissi).
+  useEffect(() => {
+    if (!mockupLoading) {
+      setMockupElapsed(0);
+      return;
+    }
+    const t = setInterval(() => setMockupElapsed((e) => e + 1), 1000);
+    return () => clearInterval(t);
+  }, [mockupLoading]);
 
   // --- Handlers ---------------------------------------------------------
   const choose = (criterion: CriterionId, valueId: string) => {
@@ -639,8 +650,18 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                   />
                 )}
                 {mockupLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-background/70 text-xs tracking-wide">
-                    Gerçekçi mockup üretiliyor…
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/85">
+                    <div className="h-9 w-9 rounded-full border-2 border-foreground/25 border-t-foreground animate-spin" />
+                    <div className="text-xs tracking-wide">
+                      Gerçekçi mockup üretiliyor…{" "}
+                      <span className="tabular-nums font-medium">{mockupElapsed}s</span>
+                    </div>
+                    <div className="w-44 h-1.5 rounded-full bg-foreground/15 overflow-hidden">
+                      <div className="h-full w-1/2 rounded-full bg-foreground/60 animate-pulse" />
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      Yapay zekâ aracı işliyor — genelde 5-15 saniye
+                    </div>
                   </div>
                 )}
               </div>
