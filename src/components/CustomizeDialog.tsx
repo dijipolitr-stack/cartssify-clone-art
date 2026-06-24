@@ -99,6 +99,11 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   });
   const [notes, setNotes] = useState("");
   const [angle, setAngle] = useState<AngleId>("on");
+  // Gemini ile üretilen GERÇEKÇİ mockup (data URL). Üretilince önizlemede canvas
+  // yerine bu gösterilir. Seçim/görsel değişince geçersizleşir → null'a çekilir.
+  const [mockupResult, setMockupResult] = useState<string | null>(null);
+  const [mockupLoading, setMockupLoading] = useState(false);
+  const [mockupError, setMockupError] = useState<string | null>(null);
 
   // Önizleme kutusunun piksel boyutu (kare) — logo perspektifini px'e çevirmek için.
   // Callback ref: Radix portal içeriği mount olduğunda kesin çağrılır (useEffect +
@@ -300,13 +305,46 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   }, [previewSrc, angle, boxPx, surfaces, assets, activeSurfaces]);
 
   // --- Handlers ---------------------------------------------------------
-  const choose = (criterion: CriterionId, valueId: string) =>
+  const choose = (criterion: CriterionId, valueId: string) => {
     setSelection((prev) => ({ ...prev, [criterion]: valueId }));
+    setMockupResult(null); // konfigürasyon değişti → eski mockup geçersiz
+  };
+
+  // Gemini ile GERÇEKÇİ mockup üret: araç render'ı + giydirme tasarımı sunucuya
+  // gönderilir (/api/mockup), tasarım aracın ön paneline perspektif+ışıkla bindirilir.
+  const generateMockup = async () => {
+    const surface = activeSurfaces.find((s) => surfaces[s.id] === "giydirme");
+    const asset = surface ? assets.giydirme : null;
+    if (!asset) return;
+    setMockupLoading(true);
+    setMockupError(null);
+    try {
+      const res = await fetch("/api/mockup", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          aracUrl: window.location.origin + previewSrc,
+          designDataUrl: asset.thumb,
+        }),
+      });
+      const data = (await res.json()) as {
+        mockupDataUrl?: string;
+        error?: string;
+      };
+      if (data.mockupDataUrl) setMockupResult(data.mockupDataUrl);
+      else setMockupError(data.error || "Mockup üretilemedi.");
+    } catch (e) {
+      setMockupError(String(e));
+    } finally {
+      setMockupLoading(false);
+    }
+  };
 
   // Bir yüzeye logo/giydirme atandığında önizlemeyi o yüzeyin görünür olduğu
   // (frontal) açıya geçir — böylece kullanıcı mockup'ı hemen doğru açıdan görür.
   const setSurfaceFill = (id: string, fill: SurfaceFill) => {
     setSurfaces((p) => ({ ...p, [id]: fill }));
+    setMockupResult(null);
     if (fill !== "yok") {
       const s = mockupSurfaces.find((x) => x.id === id);
       const firstAngle = s && (Object.keys(s.views)[0] as AngleId | undefined);
@@ -320,8 +358,10 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
-        if (typeof reader.result === "string")
+        if (typeof reader.result === "string") {
           setAssets((p) => ({ ...p, [kind]: { name: file.name, thumb: reader.result as string } }));
+          setMockupResult(null);
+        }
       };
       reader.readAsDataURL(file);
     };
@@ -565,20 +605,51 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
           <div className="bg-secondary flex flex-col">
             <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden min-h-[320px]">
               <div ref={measureBox} className="relative w-full max-w-md aspect-square">
-                {/* Canvas kompozit: araç render'ı + logo/giydirme görselleri tek
-                    canvas'a explicit piksel koordinatıyla çizilir (useEffect).
-                    CSS object-contain ölçek kayması olmaz → giydirme paneli tam
-                    doldurur. Çizim previewSrc/açı/yüzey/görsel değiştikçe yenilenir. */}
-                <canvas
-                  ref={canvasRef}
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                  style={
-                    isLake
-                      ? { filter: "contrast(1.1) saturate(1.12) brightness(1.03)" }
-                      : undefined
-                  }
-                />
+                {mockupResult ? (
+                  // Gemini ile üretilmiş GERÇEKÇİ mockup (perspektif + ışık/gölge).
+                  <img
+                    src={mockupResult}
+                    alt="mockup"
+                    className="absolute inset-0 w-full h-full object-contain"
+                  />
+                ) : (
+                  // Anlık kaba önizleme: araç render'ı + görsel canvas'a bindirilir.
+                  <canvas
+                    ref={canvasRef}
+                    className="absolute inset-0 w-full h-full pointer-events-none"
+                    style={
+                      isLake
+                        ? { filter: "contrast(1.1) saturate(1.12) brightness(1.03)" }
+                        : undefined
+                    }
+                  />
+                )}
+                {mockupLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/70 text-xs tracking-wide">
+                    Gerçekçi mockup üretiliyor…
+                  </div>
+                )}
               </div>
+
+              {/* Gerçekçi mockup üretimi (giydirme yüklüyken) */}
+              {activeSurfaces.some((s) => surfaces[s.id] === "giydirme") && (
+                <div className="mt-3 flex flex-col items-center gap-1">
+                  <button
+                    onClick={generateMockup}
+                    disabled={mockupLoading}
+                    className="text-[11px] tracking-[0.1em] uppercase px-4 py-2 border border-foreground bg-foreground text-background hover:opacity-90 transition disabled:opacity-50"
+                  >
+                    {mockupLoading
+                      ? "Üretiliyor…"
+                      : mockupResult
+                        ? "Yeniden üret (AI mockup)"
+                        : "Gerçekçi mockup üret (AI)"}
+                  </button>
+                  {mockupError && (
+                    <span className="text-[10px] text-red-600">{mockupError}</span>
+                  )}
+                </div>
+              )}
 
               {/* Açı seçici (mockup modunda yalnızca foto'nun oturduğu açılar) */}
               <div className="mt-4 flex flex-wrap gap-1.5 justify-center">

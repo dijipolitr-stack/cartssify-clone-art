@@ -69,6 +69,13 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // Gemini mockup API — TanStack handler'a girmeden önce yakalanır; env
+      // (Cloudflare binding, GEMINI_API_KEY) doğrudan geçer, anahtar sunucuda kalır.
+      const url = new URL(request.url);
+      if (url.pathname === "/api/mockup") {
+        const { handleMockup } = await import("./lib/mockup-handler");
+        return await handleMockup(request, env as { GEMINI_API_KEY?: string });
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
