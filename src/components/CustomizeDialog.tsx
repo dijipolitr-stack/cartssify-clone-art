@@ -191,13 +191,22 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     variant === "" &&
     !hasAsset &&
     (renderBase === "/renders" || renderBase === "/renders/150");
+  // Gerçek Lake render'ı (V-Ray gövde reflection) ŞU AN sadece 100 raflı beyaz sette var.
+  // Orada CSS lake filtresi yerine gerçek -lake webp kullanılır; diğer setlerde CSS devam eder.
+  const realLake =
+    isLake &&
+    renderBase === "/renders/100-rafli" &&
+    !COLOR_RENDER_IDS.has(colorId) &&
+    !hasAsset &&
+    !metalActive;
+  const lakeSuffix = realLake ? "-lake" : "";
   const previewSrc = hasAsset
     ? `${renderBase}/hero-${angle}${variant}-nologo.webp`
     : COLOR_RENDER_IDS.has(colorId)
       ? `${renderBase}/hero-${colorId}-${angle}${variant}.webp`
       : metalActive
         ? `${renderBase}/hero-${angle}-metal-${selection.metalRengi}.webp`
-        : `${renderBase}/hero-${angle}${variant}.webp`;
+        : `${renderBase}/hero-${angle}${variant}${lakeSuffix}.webp`;
 
   // Aktif açıda önizlenecek yüzeyler: yok değil + ilgili görsel yüklü + tente
   // ise tente açık. Her yüzey kendi seçtiği görseli (logo/giydirme) gösterir.
@@ -634,7 +643,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                     alt="mockup"
                     className="absolute inset-0 w-full h-full object-contain"
                     style={
-                      isLake
+                      isLake && !realLake
                         ? { filter: "contrast(1.1) saturate(1.12) brightness(1.03)" }
                         : undefined
                     }
@@ -645,7 +654,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                     ref={canvasRef}
                     className="absolute inset-0 w-full h-full pointer-events-none"
                     style={
-                      isLake
+                      isLake && !realLake
                         ? { filter: "contrast(1.1) saturate(1.12) brightness(1.03)" }
                         : undefined
                     }
