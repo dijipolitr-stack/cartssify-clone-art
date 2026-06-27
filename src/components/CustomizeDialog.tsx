@@ -191,11 +191,12 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     variant === "" &&
     !hasAsset &&
     (renderBase === "/renders" || renderBase === "/renders/150");
-  // Gerçek Lake render'ı (V-Ray gövde reflection) ŞU AN sadece 100 raflı beyaz sette var.
-  // Orada CSS lake filtresi yerine gerçek -lake webp kullanılır; diğer setlerde CSS devam eder.
+  // Gerçek Lake render'ı (V-Ray gövde reflection) beyaz sette var: 100 raflı (/renders/100-rafli)
+  // ve 100 rafsız (kök /renders). Orada CSS lake filtresi yerine gerçek -lake webp kullanılır;
+  // diğer setlerde CSS devam eder.
   const realLake =
     isLake &&
-    renderBase === "/renders/100-rafli" &&
+    (renderBase === "/renders/100-rafli" || renderBase === "/renders") &&
     !COLOR_RENDER_IDS.has(colorId) &&
     !hasAsset &&
     !metalActive;
