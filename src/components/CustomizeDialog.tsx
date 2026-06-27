@@ -194,17 +194,19 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   // Gerçek Lake render'ı (V-Ray gövde reflection) beyaz sette var: 100 raflı (/renders/100-rafli)
   // ve 100 rafsız (kök /renders). Orada CSS lake filtresi yerine gerçek -lake webp kullanılır;
   // diğer setlerde CSS devam eder.
+  // Gerçek lake webp'leri: 100 rafsız (/renders) hem beyaz hem renkli; 100 raflı (/renders/100-rafli)
+  // sadece beyaz (renkli lake render'ı henüz yok, orada CSS devam eder).
   const realLake =
     isLake &&
-    (renderBase === "/renders/100-rafli" || renderBase === "/renders") &&
-    !COLOR_RENDER_IDS.has(colorId) &&
     !hasAsset &&
-    !metalActive;
+    !metalActive &&
+    (renderBase === "/renders" ||
+      (renderBase === "/renders/100-rafli" && !COLOR_RENDER_IDS.has(colorId)));
   const lakeSuffix = realLake ? "-lake" : "";
   const previewSrc = hasAsset
     ? `${renderBase}/hero-${angle}${variant}-nologo.webp`
     : COLOR_RENDER_IDS.has(colorId)
-      ? `${renderBase}/hero-${colorId}-${angle}${variant}.webp`
+      ? `${renderBase}/hero-${colorId}-${angle}${variant}${lakeSuffix}.webp`
       : metalActive
         ? `${renderBase}/hero-${angle}-metal-${selection.metalRengi}.webp`
         : `${renderBase}/hero-${angle}${variant}${lakeSuffix}.webp`;
