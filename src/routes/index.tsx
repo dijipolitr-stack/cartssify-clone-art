@@ -139,6 +139,40 @@ function Feature({
   );
 }
 
+function ColorBanner() {
+  const { locale } = useI18n();
+  const eyebrow = locale === "tr" ? "RENK SEÇENEKLERİ" : "COLOR OPTIONS";
+  const title =
+    locale === "tr" ? "Markana göre, her renkte" : "Any color, built to your brand";
+  const body =
+    locale === "tr"
+      ? "Gövde ve tente rengini seç, aracını markana göre özelleştir."
+      : "Choose body and awning color and tailor your cart to your brand.";
+  return (
+    <section className="py-16 md:py-24 border-t border-border bg-white">
+      <div className="max-w-7xl mx-auto px-6 text-center">
+        <p className="text-xs tracking-[0.3em] uppercase text-muted-foreground mb-5">
+          {eyebrow}
+        </p>
+        <h2 className="text-3xl md:text-5xl font-light tracking-tight text-foreground leading-[1.05]">
+          {title}
+        </h2>
+        <p className="mt-5 text-base text-muted-foreground max-w-xl mx-auto">
+          {body}
+        </p>
+        <img
+          src="/products/anasayfa-4arac.webp"
+          alt={title}
+          loading="lazy"
+          width={1024}
+          height={538}
+          className="mt-10 w-full max-w-5xl mx-auto object-contain"
+        />
+      </div>
+    </section>
+  );
+}
+
 function Index() {
   const t = useT();
   const { locale } = useI18n();
@@ -154,6 +188,7 @@ function Index() {
       <SiteNav variant="home" />
       <main>
         <Hero />
+        <ColorBanner />
         {/* The 3 feature blocks live under a #features anchor so the nav link works */}
         <div id="features">
           <Feature

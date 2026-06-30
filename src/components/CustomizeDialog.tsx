@@ -91,7 +91,11 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     CONFIG_PRODUCTS[0].id;
 
   const [productId, setProductId] = useState<ConfigProductId>(initialProductId);
-  const [selection, setSelection] = useState<Selection>(() => defaultSelection());
+  // Vitrin kartından gelen renk + varyant ön-seçimi (product.init) varsayılana bindirilir.
+  const [selection, setSelection] = useState<Selection>(() => ({
+    ...defaultSelection(),
+    ...((product.init ?? {}) as Partial<Selection>),
+  }));
   const [customText, setCustomText] = useState<Partial<Record<CriterionId, string>>>({});
   // Her yüzeye ne uygulandığı (yok / logo / giydirme) + iki ayrı yüklenen görsel.
   const [surfaces, setSurfaces] = useState<Record<string, SurfaceFill>>({});
