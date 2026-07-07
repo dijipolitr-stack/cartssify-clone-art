@@ -24,6 +24,7 @@ dist-ssr
 tools/recolor/cikti/
 tools/recolor/cikti-det/
 tools/recolor/cikti-gemini/
+tools/recolor/__pycache__/
 
 # Editor directories and files
 .vscode/*
