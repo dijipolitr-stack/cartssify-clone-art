@@ -124,7 +124,6 @@ export type CriterionId =
   | "kumasTente"
   | "dekoratifTekerlek"
   | "tutamacRaf"
-  | "arkaKapak"
   | "metalRengi";
 
 export type Criterion = {
@@ -200,16 +199,6 @@ export const CRITERIA: Criterion[] = [
     ],
   },
   {
-    id: "arkaKapak",
-    label: { tr: "Arka Kapak", en: "Back Cover" },
-    control: "toggle",
-    layer: "arkakapak",
-    values: [
-      { id: "yok", label: { tr: "Yok", en: "None" }, priceDelta: 0, isNone: true },
-      { id: "var", label: { tr: "Var", en: "Yes" }, priceDelta: 110 }, // PLACEHOLDER
-    ],
-  },
-  {
     id: "metalRengi",
     label: { tr: "Metal Rengi", en: "Metal Color" },
     control: "swatch",
@@ -240,6 +229,88 @@ export function isCriterionActive(
 ): boolean {
   if (!c.dependsOn) return true;
   return selection[c.dependsOn.criterion] === c.dependsOn.value;
+}
+
+// --------------------------------------------------------------------------
+// V2 RENDER KÜTÜPHANESİ — firma WeTransfer setinden üretilen tentesiz/tenteli
+// katalog (7 kare, kare zemin webp). Konfigüratör önizlemesi migre edilmiş
+// config'lerde bu yeni yolu kullanır; diğerleri eski /renders sistemine düşer.
+//   Yol: /renders/v2/<configKey>/<renk>/<tente>/<NN>.webp
+//   configKey = <boyut>-<metal>-<tip>  (ör. 150-krom-rafli)
+//   renk = beyaz|siyah|mavi|kirmizi|yesil   tente = tentesiz|tenteli   NN = 01..07
+// --------------------------------------------------------------------------
+
+/** Konfigüratörde gösterilen 7 katalog karesi (açı yerine geçti). */
+export const FRAMES = [1, 2, 3, 4, 5, 6, 7] as const;
+
+/** metalRengi + tutamacRaf + boyut → v2 config klasör anahtarı. */
+export function v2ConfigKey(size: string, metal: string, tutamacRaf: string): string {
+  const s = size === "150cm" ? "150" : "100";
+  const m = metal === "pirinc" ? "pirinc" : metal === "pirinckrom" ? "pirinckrom" : "krom";
+  const t =
+    tutamacRaf === "raf" ? "rafli" : tutamacRaf === "sapli" ? "sapli" : "tutamacli";
+  return `${s}-${m}-${t}`;
+}
+
+/** Hangi config anahtarları v2 kütüphanesinde mevcut (görselleri hazır). */
+export const V2_CONFIGS = new Set<string>([
+  "150-krom-rafli",
+  "150-krom-tutamacli",
+  "100-krom-rafli",
+  "150-pirinc-rafli", // saf pirinç raflı (5 renk, beyaz dahil)
+  "100-krom-tutamacli",
+  "150-pirinc-tutamacli",
+  "100-pirinc-rafli", // saf pirinç, 5 renk beyaz dahil
+  "100-pirinc-tutamacli", // saf pirinç, 5 renk beyaz dahil
+]);
+
+/** Hangi (configKey → tente durumları) hazır. Tenteli henüz işlenmediyse yok. */
+export const V2_TENTE: Record<string, Set<"tentesiz" | "tenteli">> = {
+  "150-krom-rafli": new Set(["tentesiz", "tenteli"]),
+  "150-krom-tutamacli": new Set(["tentesiz", "tenteli"]),
+  "100-krom-rafli": new Set(["tentesiz", "tenteli"]),
+  "150-pirinc-rafli": new Set(["tentesiz", "tenteli"]),
+  "100-krom-tutamacli": new Set(["tentesiz", "tenteli"]),
+  "150-pirinc-tutamacli": new Set(["tentesiz", "tenteli"]),
+  "100-pirinc-rafli": new Set(["tentesiz", "tenteli"]),
+  "100-pirinc-tutamacli": new Set(["tentesiz", "tenteli"]),
+};
+
+/**
+ * Beyaz gövde görseli HENÜZ olmayan config'ler. İki sebep: (1) native beyaz kaynağı yok
+ * (rafli'lar), (2) beyaz native var ama kare hizası regen bekliyor ((b) stratejisi).
+ */
+export const V2_NO_BEYAZ = new Set<string>([
+  // Tüm v2 config'lerinde beyaz mevcut. İleride beyaz'sız bir config gelirse buraya eklenir.
+]);
+
+/** Gövde rengini v2 klasör adına eşle (ozel → beyaz'a düşer). */
+export function v2ColorId(govdeRengi: string): string {
+  return govdeRengi === "ozel" ? "beyaz" : govdeRengi;
+}
+
+/**
+ * v2 önizleme yolu. Config migre edilmemişse null (eski sisteme düş).
+ * Tente durumu hazır değilse yol döner ama caller "hazırlanıyor" gösterebilir;
+ * burada kesin varlık kontrolü V2_TENTE ile yapılır → yoksa null.
+ */
+export function v2Src(
+  size: string,
+  metal: string,
+  tutamacRaf: string,
+  govdeRengi: string,
+  tenteOn: boolean,
+  frame: number,
+): string | null {
+  const key = v2ConfigKey(size, metal, tutamacRaf);
+  if (!V2_CONFIGS.has(key)) return null;
+  const tente = tenteOn ? "tenteli" : "tentesiz";
+  if (!V2_TENTE[key]?.has(tente)) return null;
+  const color = v2ColorId(govdeRengi);
+  // Beyaz görseli olmayan config'lerde beyaz seçimi → yok (caller placeholder gösterir).
+  if (color === "beyaz" && V2_NO_BEYAZ.has(key)) return null;
+  const nn = String(frame).padStart(2, "0");
+  return `/renders/v2/${key}/${color}/${tente}/${nn}.webp`;
 }
 
 // --------------------------------------------------------------------------

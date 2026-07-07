@@ -55,10 +55,27 @@ function ProductDetail() {
   const product = localizeProduct(loader.product, locale);
   const t = useT();
   const images = [product.image, ...(product.gallery ?? [])];
+  const detailImages = product.detailImages ?? [];
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(1);
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [lightbox, setLightbox] = useState<string | null>(null);
   const { addItem } = useCart();
+
+  // Lightbox açıkken Escape ile kapat + sayfa kaydırmasını kilitle.
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightbox(null);
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [lightbox]);
 
   // Deep-link: /products/<slug>?configure → konfigüratörü doğrudan açar.
   useEffect(() => {
@@ -109,6 +126,27 @@ function ProductDetail() {
                   </button>
                 ))}
               </div>
+            )}
+
+            {/* Ürüne özel ek detay görselleri — tıklanınca popup (lightbox) açılır */}
+            {detailImages.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {detailImages.map((src) => (
+                <button
+                  key={src}
+                  onClick={() => setLightbox(src)}
+                  className="aspect-square overflow-hidden bg-secondary border border-border hover:border-foreground transition cursor-zoom-in"
+                  aria-label={t.productDetail.viewImage ?? "View image"}
+                >
+                  <img
+                    src={src}
+                    alt={product.title}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
             )}
           </div>
 
@@ -257,6 +295,30 @@ function ProductDetail() {
         open={customizeOpen}
         onOpenChange={setCustomizeOpen}
       />
+
+      {/* Görsel popup (lightbox) */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 md:p-10"
+          onClick={() => setLightbox(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <button
+            onClick={() => setLightbox(null)}
+            className="absolute top-4 right-4 md:top-6 md:right-6 w-10 h-10 flex items-center justify-center text-white/90 hover:text-white text-2xl leading-none"
+            aria-label={t.cart.close ?? "Close"}
+          >
+            ×
+          </button>
+          <img
+            src={lightbox}
+            alt={product.title}
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

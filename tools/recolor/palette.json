@@ -1,0 +1,11 @@
+{
+  "_aciklama": "Her renk: prompt (Gemini icin tarif) + hue/sat (normalize hedefi). Yeni renk eklerken bir sette dene, tonu begenince buraya kilitle.",
+  "yesil":     { "prompt": "a rich emerald green (matte finish)",        "hue": 157, "sat": 0.55, "v": 0.33, "durum": "onayli" },
+  "mavi":      { "prompt": "a deep royal blue (matte finish)",           "hue": 225, "sat": 0.78, "v": 0.57, "durum": "onayli" },
+  "kirmizi":   { "prompt": "a deep muted brand red (matte finish)",       "hue": 358, "sat": 0.60, "v": 0.44, "band": 22, "durum": "onayli" },
+  "antrasit":  { "prompt": "a dark anthracite grey (matte finish)",      "hue": 210, "sat": 0.08, "durum": "taslak" },
+  "lacivert":  { "prompt": "a deep navy blue (matte finish)",            "hue": 222, "sat": 0.55, "durum": "taslak" },
+  "bordo":     { "prompt": "a deep burgundy wine red (matte finish)",    "hue": 348, "sat": 0.55, "durum": "taslak" },
+  "hardal":    { "prompt": "a warm mustard yellow (matte finish)",       "hue": 45,  "sat": 0.60, "durum": "taslak" },
+  "turkuaz":   { "prompt": "a vivid teal turquoise (matte finish)",      "hue": 178, "sat": 0.55, "durum": "taslak" }
+}

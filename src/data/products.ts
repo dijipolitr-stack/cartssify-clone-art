@@ -8,6 +8,8 @@ export type Product = {
   /** Yüzey: mat (düz) / lake (parlak vernik) — kartta CSS ile parlaklık farkı için. */
   finish?: "mat" | "lake";
   gallery?: string[];
+  /** Ana görselin altında gösterilen, ürüne özel ek açı görselleri (popup açılır). */
+  detailImages?: string[];
   tagline?: string;
   description: string;
   features: string[];
@@ -95,6 +97,7 @@ function makeProduct(o: {
   titleTr: string;
   init?: Partial<Selection>;
   gallery?: string[];
+  detailImages?: string[];
 }): Product {
   const cp = CONFIG_PRODUCTS.find((c) => c.slug === o.configSlug)!;
   const specs = specsFor(o.size);
@@ -107,6 +110,7 @@ function makeProduct(o: {
     finish: o.finish,
     init: o.init,
     gallery: o.gallery ?? galleryFor(o.size),
+    detailImages: o.detailImages,
     tagline: "Mobile Cart — fully customizable",
     description: DESC_EN,
     features: baseFeaturesEn,
@@ -125,15 +129,15 @@ function makeProduct(o: {
 // varyant/yüzey örnekleri. Kart tıklanınca ürün sayfası, oradan "Özelleştir" ile
 // CustomizeDialog o renk + varyant ÖN-SEÇİLİ açılır; kullanıcı her şeyi değiştirir.
 export const products: Product[] = [
-  makeProduct({ slug: "kart-kirmizi-tenteli-lake", configSlug: "kart-100-parlak-lake", size: "100cm", image: "/products/kirmizi-on-lake.webp", finish: "lake", titleEn: "Red · With Awning · Lacquer", titleTr: "Kırmızı · Tenteli · Lake", init: { govdeRengi: "kirmizi", kumasTente: "var", dekoratifTekerlek: "var", tutamacRaf: "tutamac" }, gallery: [] }),
-  makeProduct({ slug: "kart-kirmizi-tekersiz-lake", configSlug: "kart-100-parlak-lake", size: "100cm", image: "/products/kirmizi-on-sag-tekeryok-lake.webp", finish: "lake", titleEn: "Red · No Decorative Wheel · Lacquer", titleTr: "Kırmızı · Tekerleksiz · Lake", init: { govdeRengi: "kirmizi", kumasTente: "var", dekoratifTekerlek: "yok", tutamacRaf: "tutamac" }, gallery: [] }),
-  makeProduct({ slug: "kart-mavi-sade-mat", configSlug: "kart-100-mat-lam", size: "100cm", image: "/products/mavi-on-tekeryok-tenteyok-mat.webp", finish: "mat", titleEn: "Blue · Minimal · Matte", titleTr: "Mavi · Sade · Mat", init: { govdeRengi: "mavi", kumasTente: "yok", dekoratifTekerlek: "yok", tutamacRaf: "tutamac" }, gallery: [] }),
+  makeProduct({ slug: "kart-kirmizi-tenteli-lake", configSlug: "kart-100-parlak-lake", size: "100cm", image: "/products/kirmizi-on-lake.webp", finish: "lake", titleEn: "Red · With Awning · Lacquer", titleTr: "Kırmızı · Tenteli · Lake", init: { govdeRengi: "kirmizi", kumasTente: "var", dekoratifTekerlek: "var", tutamacRaf: "tutamac" }, gallery: [], detailImages: ["/products/rumicarts-detay-1.webp", "/products/rumicarts-detay-2.webp"] }),
+  makeProduct({ slug: "kart-kirmizi-tekersiz-lake", configSlug: "kart-100-parlak-lake", size: "100cm", image: "/products/kirmizi-on-sag-tekeryok-lake.webp", finish: "lake", titleEn: "Red · No Decorative Wheel · Lacquer", titleTr: "Kırmızı · Tekerleksiz · Lake", init: { govdeRengi: "kirmizi", kumasTente: "var", dekoratifTekerlek: "yok", tutamacRaf: "tutamac" }, gallery: [], detailImages: ["/products/kirmizi-tekersiz-detay-1.webp", "/products/kirmizi-tekersiz-detay-2.webp"] }),
+  makeProduct({ slug: "kart-mavi-sade-mat", configSlug: "kart-100-mat-lam", size: "100cm", image: "/products/mavi-on-tekeryok-tenteyok-mat.webp", finish: "mat", titleEn: "Blue · Minimal · Matte", titleTr: "Mavi · Sade · Mat", init: { govdeRengi: "mavi", kumasTente: "yok", dekoratifTekerlek: "yok", tutamacRaf: "tutamac" }, gallery: [], detailImages: ["/products/mavi-sade-detay-1.webp", "/products/mavi-sade-detay-2.webp"] }),
   makeProduct({ slug: "kart-siyah-tekersiz-lake", configSlug: "kart-100-parlak-lake", size: "100cm", image: "/products/siyah-on-sol-tekeryok-lake.webp", finish: "lake", titleEn: "Black · No Decorative Wheel · Lacquer", titleTr: "Siyah · Tekerleksiz · Lake", init: { govdeRengi: "siyah", kumasTente: "var", dekoratifTekerlek: "yok", tutamacRaf: "tutamac" }, gallery: [] }),
   makeProduct({ slug: "kart-yesil-tentesiz-lake", configSlug: "kart-100-parlak-lake", size: "100cm", image: "/products/yesil-on-sol-tenteyok-lake.webp", finish: "lake", titleEn: "Green · No Awning · Lacquer", titleTr: "Yeşil · Tentesiz · Lake", init: { govdeRengi: "yesil", kumasTente: "yok", dekoratifTekerlek: "var", tutamacRaf: "tutamac" }, gallery: [] }),
   makeProduct({ slug: "kart-beyaz-tekerlekli-lake", configSlug: "kart-100-parlak-lake", size: "100cm", image: "/products/g-beyaz-tam.webp", finish: "lake", titleEn: "White · No Awning · With Wheel · Lacquer", titleTr: "Beyaz · Tentesiz · Tekerlekli · Lake", init: { govdeRengi: "beyaz", kumasTente: "yok", dekoratifTekerlek: "var", tutamacRaf: "raf" }, gallery: [] }),
   makeProduct({ slug: "kart-mavi-rafli-lake", configSlug: "kart-100-parlak-lake", size: "100cm", image: "/products/g-mavi-tam.webp", finish: "lake", titleEn: "Blue · With Shelf · Lacquer", titleTr: "Mavi · Raflı · Lake", init: { govdeRengi: "mavi", kumasTente: "var", dekoratifTekerlek: "yok", tutamacRaf: "raf" }, gallery: [] }),
   makeProduct({ slug: "kart-yesil-rafli-lake", configSlug: "kart-100-parlak-lake", size: "100cm", image: "/products/g-yesil-tam.webp", finish: "lake", titleEn: "Green · With Shelf · Lacquer", titleTr: "Yeşil · Raflı · Lake", init: { govdeRengi: "yesil", kumasTente: "var", dekoratifTekerlek: "yok", tutamacRaf: "raf" }, gallery: [] }),
-  makeProduct({ slug: "kart-siyah-rafli-lake", configSlug: "kart-100-parlak-lake", size: "100cm", image: "/products/g-siyah-tam.webp", finish: "lake", titleEn: "Black · With Shelf · Lacquer", titleTr: "Siyah · Raflı · Lake", init: { govdeRengi: "siyah", kumasTente: "var", dekoratifTekerlek: "yok", tutamacRaf: "raf" }, gallery: [] }),
+  makeProduct({ slug: "kart-siyah-rafli-lake", configSlug: "kart-100-parlak-lake", size: "100cm", image: "/products/g-siyah-tam.webp", finish: "lake", titleEn: "Black · With Shelf · Lacquer", titleTr: "Siyah · Raflı · Lake", init: { govdeRengi: "siyah", kumasTente: "var", dekoratifTekerlek: "yok", tutamacRaf: "raf" }, gallery: [], detailImages: ["/products/siyah-rafli-detay-1.webp", "/products/siyah-rafli-detay-2.webp"] }),
   // --- 150 cm ürünler ---
   makeProduct({ slug: "kart-150-beyaz-tenteli-lake", configSlug: "kart-150-parlak-lake", size: "150cm", image: "/products/g150-beyaz-tenteli.webp", finish: "lake", titleEn: "150 cm · White · With Awning · Lacquer", titleTr: "150 cm · Beyaz · Tenteli · Lake", init: { govdeRengi: "beyaz", kumasTente: "var", dekoratifTekerlek: "var", tutamacRaf: "tutamac" }, gallery: [] }),
   makeProduct({ slug: "kart-150-mavi-tenteli-lake", configSlug: "kart-150-parlak-lake", size: "150cm", image: "/products/g150-mavi-tenteli.webp", finish: "lake", titleEn: "150 cm · Blue · With Awning · Lacquer", titleTr: "150 cm · Mavi · Tenteli · Lake", init: { govdeRengi: "mavi", kumasTente: "var", dekoratifTekerlek: "var", tutamacRaf: "tutamac" }, gallery: [] }),

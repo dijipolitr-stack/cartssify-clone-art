@@ -158,6 +158,7 @@ export const tr: typeof en = {
     specs: "Teknik özellikler",
     specsComingSoon: "Detaylı boyut ve ağırlık bilgileri yakında eklenecek.",
     askForSpecs: "Boyutları sor",
+    viewImage: "Görseli görüntüle",
   },
 
   customizeDialog: {

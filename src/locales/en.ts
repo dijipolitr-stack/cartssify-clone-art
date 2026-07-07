@@ -156,6 +156,7 @@ export const en = {
     specs: "Specifications",
     specsComingSoon: "Detailed dimensions and weight specs are being finalized.",
     askForSpecs: "Ask for specs",
+    viewImage: "View image",
   },
 
   customizeDialog: {

@@ -20,6 +20,11 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Recolor tooling — ara islem ciktilari (369MB Gemini/normalize PNG'leri, repoya girmez)
+tools/recolor/cikti/
+tools/recolor/cikti-det/
+tools/recolor/cikti-gemini/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

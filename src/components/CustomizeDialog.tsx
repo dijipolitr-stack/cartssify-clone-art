@@ -5,6 +5,10 @@ import { useCart } from "@/lib/cart";
 import { useI18n } from "@/lib/i18n";
 import {
   ANGLES,
+  FRAMES,
+  V2_CONFIGS,
+  v2ConfigKey,
+  v2Src,
   CONFIG_PRODUCTS,
   CONFIG_UI,
   CRITERIA,
@@ -105,6 +109,8 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   });
   const [notes, setNotes] = useState("");
   const [angle, setAngle] = useState<AngleId>("on");
+  // v2 kütüphanesi: açı yerine 7 katalog karesi (1..7).
+  const [frame, setFrame] = useState(1);
   // Gemini ile üretilen GERÇEKÇİ mockup (data URL). Üretilince önizlemede canvas
   // yerine bu gösterilir. Seçim/görsel değişince geçersizleşir → null'a çekilir.
   const [mockupResult, setMockupResult] = useState<string | null>(null);
@@ -207,13 +213,27 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     (renderBase === "/renders" ||
       (renderBase === "/renders/100-rafli" && !COLOR_RENDER_IDS.has(colorId)));
   const lakeSuffix = realLake ? "-lake" : "";
-  const previewSrc = hasAsset
+  const oldPreviewSrc = hasAsset
     ? `${renderBase}/hero-${angle}${variant}-nologo.webp`
     : COLOR_RENDER_IDS.has(colorId)
       ? `${renderBase}/hero-${colorId}-${angle}${variant}${lakeSuffix}.webp`
       : metalActive
         ? `${renderBase}/hero-${angle}-metal-${selection.metalRengi}.webp`
         : `${renderBase}/hero-${angle}${variant}${lakeSuffix}.webp`;
+  // v2 KÜTÜPHANESİ: migre edilmiş config + mockup modunda değil → firma setinden
+  // üretilen yeni tentesiz/tenteli katalog (7 kare). Diğer config'ler eski sistemde.
+  const cfgSize = getConfigProduct(productId).size;
+  // v2 şimdilik yalnız MAT yüzeyde (lake render'ları henüz yok → eski sistemde kalır).
+  const isV2 =
+    !hasAsset &&
+    getConfigProduct(productId).finish === "mat" &&
+    V2_CONFIGS.has(v2ConfigKey(cfgSize, selection.metalRengi, selection.tutamacRaf));
+  const v2preview = isV2
+    ? v2Src(cfgSize, selection.metalRengi, selection.tutamacRaf, colorId, tenteOn, frame)
+    : null;
+  // v2 config ama bu tente durumu (ör. tenteli) henüz hazır değil → placeholder.
+  const previewMissing = isV2 && v2preview === null;
+  const previewSrc = previewMissing ? "" : (v2preview ?? oldPreviewSrc);
 
   // Aktif açıda önizlenecek yüzeyler: yok değil + ilgili görsel yüklü + tente
   // ise tente açık. Her yüzey kendi seçtiği görseli (logo/giydirme) gösterir.
@@ -300,6 +320,25 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
         ui.src = asset.thumb;
       }
     };
+
+    // v2 config'te bu tente durumu henüz hazır değil → temiz "hazırlanıyor" karesi.
+    if (!previewSrc) {
+      ctx.clearRect(0, 0, boxPx, boxPx);
+      ctx.fillStyle = "#f5f4f1";
+      ctx.fillRect(0, 0, boxPx, boxPx);
+      ctx.fillStyle = "#a3a29c";
+      ctx.font = `${Math.round(boxPx * 0.034)}px system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(
+        "Bu seçim için görsel yakında eklenecek",
+        boxPx / 2,
+        boxPx / 2,
+      );
+      return () => {
+        cancelled = true;
+      };
+    }
 
     const arac = new Image();
     arac.onload = () => {
@@ -704,21 +743,36 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                 </div>
               )}
 
-              {/* Açı seçici (mockup modunda yalnızca foto'nun oturduğu açılar) */}
+              {/* Görünüm seçici: v2 config'te 7 katalog karesi (1..7), diğerlerinde açılar */}
               <div className="mt-4 flex flex-wrap gap-1.5 justify-center">
-                {shownAngles.map((a) => (
-                  <button
-                    key={a.id}
-                    onClick={() => setAngle(a.id)}
-                    className={`text-[10px] tracking-[0.1em] uppercase px-2 py-1 border transition ${
-                      angle === a.id
-                        ? "border-foreground bg-background"
-                        : "border-border bg-background/60 hover:border-foreground"
-                    }`}
-                  >
-                    {pick(a.label, locale)}
-                  </button>
-                ))}
+                {isV2
+                  ? FRAMES.map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => setFrame(f)}
+                        aria-label={`Görünüm ${f}`}
+                        className={`text-[11px] tabular-nums w-7 h-7 border transition ${
+                          frame === f
+                            ? "border-foreground bg-background"
+                            : "border-border bg-background/60 hover:border-foreground"
+                        }`}
+                      >
+                        {f}
+                      </button>
+                    ))
+                  : shownAngles.map((a) => (
+                      <button
+                        key={a.id}
+                        onClick={() => setAngle(a.id)}
+                        className={`text-[10px] tracking-[0.1em] uppercase px-2 py-1 border transition ${
+                          angle === a.id
+                            ? "border-foreground bg-background"
+                            : "border-border bg-background/60 hover:border-foreground"
+                        }`}
+                      >
+                        {pick(a.label, locale)}
+                      </button>
+                    ))}
               </div>
 
               {/* Mockup modunda dekoratif tekerlek gizlenir (panel temiz görünsün
