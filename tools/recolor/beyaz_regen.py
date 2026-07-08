@@ -26,20 +26,38 @@ def key():
     raise SystemExit("GEMINI_API_KEY yok")
 KEY = key()
 
+# config-tipi + metal duyarli prompt (dewheel_gemini.py deseni)
+_c = CFG.lower()
+METAL = "BRASS/GOLD" if "pirinc" in _c else "chrome/silver"
+if "rafli" in _c:
+    PARTS = (
+        "This cart has fold-out drop-leaf SIDE TABLES/shelves and NO push handle. Keep the side tables "
+        "EXACTLY as they appear in the input (same side, same fold state, same position), but recolor "
+        "their tabletop surfaces to the SAME clean matte WHITE as the body — the side tables must NOT "
+        "stay black; every panel and tabletop of the cart becomes white. Do NOT add, draw, or invent "
+        "ANY push handle, bar, rail, or tube anywhere."
+    )
+else:
+    PARTS = (
+        "This cart has a metal PUSH HANDLE and NO fold-out side tables. Keep the push handle EXACTLY as "
+        "it appears in the input (same side); do NOT add, unfold, or invent any side table/shelf/tray."
+    )
+
 AWNING = (
     " There is also a fabric AWNING/canopy on top supported by metal poles; recolor the awning fabric "
     "from black to the SAME clean matte WHITE and keep any RUMICARTS logo on the awning DARK/readable; "
-    "keep the poles metal."
+    f"keep the poles {METAL} metal."
 ) if TENTE == "tenteli" else ""
 
 PROMPT = (
-    "You are editing a product studio photo of a matte BLACK mobile serving cart (with a chrome "
-    "push handle) on a plain white background. TASK: recolor ONLY the cart's body/cabinet panels "
-    "and the counter TOP surface from black to clean matte WHITE (like a white-painted wood cabinet). "
+    "You are editing a product studio photo of a matte BLACK mobile serving cart on a plain white "
+    "background. TASK: recolor ONLY the cart's body/cabinet panels and the counter TOP surface from "
+    "black to clean matte WHITE (like a white-painted wood cabinet). "
     + AWNING +
-    " Keep EVERYTHING else 100% identical and in the exact same position/scale/framing: the chrome "
-    "metal push handle, the white-and-chrome spoked decorative wheel, the small corner swivel casters, "
-    "the shadows, and the composition. LOGO RULE: IF (and only if) the input already shows a RUMICARTS "
+    " Keep EVERYTHING else 100% identical and in the exact same position/scale/framing: the "
+    f"{METAL} metal parts (poles, handle, wheel rim/accents) stay {METAL} — do NOT change their metal "
+    "color to any other metal; the spoked decorative wheel; the small corner swivel casters; the shadows; "
+    f"and the composition. {PARTS} LOGO RULE: IF (and only if) the input already shows a RUMICARTS "
     "logo/text on a body panel, keep it in the SAME place and make it DARK grey/black so it stays "
     "readable on the now-white body. IF a panel is plain black with NO logo (e.g. back or side panels, "
     "closed doors), keep it PLAIN WHITE with NO text — do NOT add, invent, draw, or copy any logo/text "
