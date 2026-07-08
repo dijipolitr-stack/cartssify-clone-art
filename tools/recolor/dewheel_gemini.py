@@ -19,7 +19,9 @@ import numpy as np
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 V2 = os.path.join(ROOT, "public", "renders", "v2")
-OUTROOT = os.path.join(V2, "_dewheel_gemini")
+# Staging public/ DISINDA: vite build public/ altini dist/client'a kopyalayip deploy'da
+# production'a yukluyor. Staging PNG'ler burada kalir; nihai webp'ler tekeryok/ altina konur.
+OUTROOT = os.path.join(ROOT, "tools", "recolor", "_dewheel_staging", "_dewheel_gemini")
 MODEL = "gemini-2.5-flash-image"
 
 DESC = {

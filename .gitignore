@@ -27,10 +27,9 @@ tools/recolor/cikti-gemini/
 tools/recolor/__pycache__/
 
 # Tekerleksiz kutuphane STAGING PNG'leri (Gemini sadik-silme cikti + QA seritleri).
-# Sadece nihai tekeryok/*.webp commit'lenir; ham staging PNG repoya girmez.
-public/renders/v2/_dewheel_gemini/
-public/renders/v2/_dewheel_pilot/
-public/renders/v2/_dewheel_gemini_pilot/
+# public/ DISINDA tutulur (yoksa vite build bunlari dist/client'a kopyalar ve
+# deploy production'a yukler). Sadece nihai tekeryok/*.webp commit+deploy edilir.
+tools/recolor/_dewheel_staging/
 
 # Editor directories and files
 .vscode/*
