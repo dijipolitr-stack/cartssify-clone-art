@@ -13,8 +13,9 @@ import numpy as np
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 V2 = os.path.join(ROOT, "public", "renders", "v2")
-CFG = "100-krom-tutamacli"
-OUT = os.path.join(os.path.dirname(__file__), "_beyaz_regen")
+CFG = os.environ.get("BEYAZ_CFG", "100-krom-tutamacli")
+TENTE = os.environ.get("BEYAZ_TENTE", "tentesiz")   # tentesiz | tenteli
+OUT = os.path.join(os.path.dirname(__file__), "_beyaz_regen", CFG, TENTE)
 MODEL = "gemini-2.5-flash-image"
 
 def key():
@@ -25,11 +26,18 @@ def key():
     raise SystemExit("GEMINI_API_KEY yok")
 KEY = key()
 
+AWNING = (
+    " There is also a fabric AWNING/canopy on top supported by metal poles; recolor the awning fabric "
+    "from black to the SAME clean matte WHITE and keep any RUMICARTS logo on the awning DARK/readable; "
+    "keep the poles metal."
+) if TENTE == "tenteli" else ""
+
 PROMPT = (
     "You are editing a product studio photo of a matte BLACK mobile serving cart (with a chrome "
     "push handle) on a plain white background. TASK: recolor ONLY the cart's body/cabinet panels "
     "and the counter TOP surface from black to clean matte WHITE (like a white-painted wood cabinet). "
-    "Keep EVERYTHING else 100% identical and in the exact same position/scale/framing: the chrome "
+    + AWNING +
+    " Keep EVERYTHING else 100% identical and in the exact same position/scale/framing: the chrome "
     "metal push handle, the white-and-chrome spoked decorative wheel, the small corner swivel casters, "
     "the shadows, and the composition. LOGO RULE: IF (and only if) the input already shows a RUMICARTS "
     "logo/text on a body panel, keep it in the SAME place and make it DARK grey/black so it stays "
@@ -85,8 +93,8 @@ def align(g, siyah_rgb):
     return canvas, s
 
 def one(tente_sub, fr):
-    # tente_sub: "" (tekerlekli) veya "tekeryok"
-    sdir = os.path.join(V2, CFG, "siyah", "tentesiz", tente_sub) if tente_sub else os.path.join(V2, CFG, "siyah", "tentesiz")
+    # tente_sub: "" (tekerlekli) veya "tekeryok"; TENTE (env) = tentesiz|tenteli katalog
+    sdir = os.path.join(V2, CFG, "siyah", TENTE, tente_sub) if tente_sub else os.path.join(V2, CFG, "siyah", TENTE)
     src = os.path.join(sdir, f"{fr:02d}.webp")
     odir = os.path.join(OUT, tente_sub or "root")
     os.makedirs(odir, exist_ok=True)
