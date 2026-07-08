@@ -26,6 +26,12 @@ tools/recolor/cikti-det/
 tools/recolor/cikti-gemini/
 tools/recolor/__pycache__/
 
+# Tekerleksiz kutuphane STAGING PNG'leri (Gemini sadik-silme cikti + QA seritleri).
+# Sadece nihai tekeryok/*.webp commit'lenir; ham staging PNG repoya girmez.
+public/renders/v2/_dewheel_gemini/
+public/renders/v2/_dewheel_pilot/
+public/renders/v2/_dewheel_gemini_pilot/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

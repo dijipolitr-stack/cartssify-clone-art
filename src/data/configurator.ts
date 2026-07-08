@@ -293,6 +293,11 @@ export function v2ColorId(govdeRengi: string): string {
  * v2 önizleme yolu. Config migre edilmemişse null (eski sisteme düş).
  * Tente durumu hazır değilse yol döner ama caller "hazırlanıyor" gösterebilir;
  * burada kesin varlık kontrolü V2_TENTE ile yapılır → yoksa null.
+ *
+ * Dekoratif tekerlek "yok" ise büyük ön jant SİLİNMİŞ tekerleksiz ikiz kütüphaneye
+ * gider (tekeryok/ alt klasör, 560 webp — tekerlekli setle birebir kare/renk/tente
+ * hizalı, Gemini sadık-silme ile üretildi). Tüm 8 config için hazır (yani tekerlek
+ * yok da tekerlekli kadar tam), o yüzden ayrı varlık listesi gerekmez.
  */
 export function v2Src(
   size: string,
@@ -301,6 +306,7 @@ export function v2Src(
   govdeRengi: string,
   tenteOn: boolean,
   frame: number,
+  tekerOn = true,
 ): string | null {
   const key = v2ConfigKey(size, metal, tutamacRaf);
   if (!V2_CONFIGS.has(key)) return null;
@@ -310,7 +316,8 @@ export function v2Src(
   // Beyaz görseli olmayan config'lerde beyaz seçimi → yok (caller placeholder gösterir).
   if (color === "beyaz" && V2_NO_BEYAZ.has(key)) return null;
   const nn = String(frame).padStart(2, "0");
-  return `/renders/v2/${key}/${color}/${tente}/${nn}.webp`;
+  const tekerYolu = tekerOn ? "" : "/tekeryok";
+  return `/renders/v2/${key}/${color}/${tente}${tekerYolu}/${nn}.webp`;
 }
 
 // --------------------------------------------------------------------------

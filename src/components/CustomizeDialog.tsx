@@ -228,8 +228,11 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     !hasAsset &&
     getConfigProduct(productId).finish === "mat" &&
     V2_CONFIGS.has(v2ConfigKey(cfgSize, selection.metalRengi, selection.tutamacRaf));
+  // Dekoratif Tekerlek "Yok" → büyük ön jant silinmiş tekerleksiz ikiz kütüphane.
+  // (v2 modu !hasAsset olduğu için burada tekerlek seçimi doğrudan geçerli.)
+  const tekerOn = selection.dekoratifTekerlek !== "yok";
   const v2preview = isV2
-    ? v2Src(cfgSize, selection.metalRengi, selection.tutamacRaf, colorId, tenteOn, frame)
+    ? v2Src(cfgSize, selection.metalRengi, selection.tutamacRaf, colorId, tenteOn, frame, tekerOn)
     : null;
   // v2 config ama bu tente durumu (ör. tenteli) henüz hazır değil → placeholder.
   const previewMissing = isV2 && v2preview === null;
