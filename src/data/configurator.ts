@@ -150,12 +150,10 @@ const COLOR_VALUES: OptionValue[] = [
 // Gövde (+ tente, tek materyal) renk listesi — referans paylaşımı sorun çıkarmasın diye kopya.
 const bodyColors = COLOR_VALUES.map((v) => ({ ...v }));
 
+// Metal rengi yalnızca Krom veya Pirinç (gerçek render setlerimiz bu ikisi için var).
 const METAL_VALUES: OptionValue[] = [
   { id: "krom", label: { tr: "Krom", en: "Chrome" }, priceDelta: 0, hex: "#c9ccd1" },
   { id: "pirinc", label: { tr: "Pirinç", en: "Brass" }, priceDelta: 80, hex: "#b08a3e" }, // PLACEHOLDER
-  { id: "siyah", label: { tr: "Siyah", en: "Black" }, priceDelta: 60, hex: "#1f1f1f" }, // PLACEHOLDER
-  { id: "beyaz", label: { tr: "Beyaz", en: "White" }, priceDelta: 60, hex: "#e8e6e1" }, // PLACEHOLDER
-  { id: "ozel", label: { tr: "Özel", en: "Custom" }, priceDelta: 150, isCustom: true }, // PLACEHOLDER
 ];
 
 export const CRITERIA: Criterion[] = [
