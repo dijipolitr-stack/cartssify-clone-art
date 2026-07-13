@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { QuoteDialog } from "@/components/QuoteDialog";
 import type { Product } from "@/data/products";
 import { useI18n } from "@/lib/i18n";
+import { useCatalogOverride } from "@/lib/catalog";
 import {
   ANGLES,
   FRAMES,
@@ -142,10 +143,15 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
 
   const tenteOn = selection.kumasTente === "var";
 
-  const total = useMemo(
+  const rawTotal = useMemo(
     () => computeTotal(productId, selection, surfaces),
     [productId, selection, surfaces],
   );
+  // Admin (D1) fiyat override'ı: statik base yerine admin'in girdiği fiyat.
+  const priceOverride = useCatalogOverride(getConfigProduct(productId).slug);
+  const effectiveBase = priceOverride?.base_price ?? getConfigProduct(productId).basePrice;
+  // Toplam = ham toplam - statik base + admin base (opsiyon farkları korunur).
+  const total = rawTotal - getConfigProduct(productId).basePrice + effectiveBase;
 
   // --- Önizleme görseli -------------------------------------------------
   // Gövde rengine göre GERÇEK renkli V-Ray render'ı (beyaz + siyah/yeşil/mavi/
@@ -738,7 +744,7 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                   {locale === "tr" ? "Birim fiyat" : "Base price"}
                 </span>
                 <span className="text-sm text-muted-foreground">
-                  {formatPrice(getConfigProduct(productId).basePrice)}
+                  {formatPrice(effectiveBase)}
                 </span>
               </div>
               <div className="flex items-baseline justify-between mb-4 pt-1 border-t border-border/60">

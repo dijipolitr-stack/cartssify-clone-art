@@ -85,6 +85,11 @@ export default {
         const { handleQuote } = await import("./lib/quote-handler");
         return await handleQuote(request, env as Parameters<typeof handleQuote>[1]);
       }
+      // Public katalog — admin'in D1'deki fiyat/stok/durumunu siteye açar.
+      if (url.pathname === "/api/catalog") {
+        const { handleCatalog } = await import("./lib/catalog-handler");
+        return await handleCatalog(request, env as Parameters<typeof handleCatalog>[1]);
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

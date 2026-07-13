@@ -1,7 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { getProduct, products, localizeProduct, buildV2ModelProduct, type Product } from "@/data/products";
-import { getV2Model } from "@/data/configurator";
+import { getV2Model, formatPrice } from "@/data/configurator";
+import { useCatalogOverride } from "@/lib/catalog";
 import { TopBar } from "@/components/TopBar";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -82,6 +83,8 @@ function ProductDetail() {
   // Re-localize the product on every render so the visible content
   // changes immediately when the user toggles the language switcher.
   const product = localizeProduct(base, locale);
+  // Admin (D1) fiyat/stok/durum override'ı — configSlug ile eşleşir.
+  const catalog = useCatalogOverride(product.configSlug);
   const t = useT();
   const images = [product.image, ...(product.gallery ?? [])];
   const detailImages = product.detailImages ?? [];
@@ -189,7 +192,19 @@ function ProductDetail() {
             <h1 className="mt-3 text-3xl md:text-5xl font-light tracking-tight leading-tight">
               {product.title}
             </h1>
-            <p className="mt-5 text-2xl text-foreground">{product.price}</p>
+            <p className="mt-5 text-2xl text-foreground">
+              {catalog ? `${formatPrice(catalog.base_price)} USD` : product.price}
+            </p>
+            {catalog && catalog.status === "coming_soon" && (
+              <p className="mt-1 text-xs tracking-[0.2em] uppercase text-amber-700">
+                {locale === "tr" ? "Yakında" : "Coming soon"}
+              </p>
+            )}
+            {catalog && !catalog.in_stock && catalog.status !== "coming_soon" && (
+              <p className="mt-1 text-xs tracking-[0.2em] uppercase text-red-600">
+                {locale === "tr" ? "Tükendi" : "Out of stock"}
+              </p>
+            )}
             <p className="mt-6 text-base text-muted-foreground leading-relaxed">
               {product.description}
             </p>

@@ -11,6 +11,7 @@ import {
 import { CartProvider } from "@/lib/cart";
 import { CartDrawer } from "@/components/Cart";
 import { I18nProvider } from "@/lib/i18n";
+import { CatalogProvider } from "@/lib/catalog";
 
 import appCss from "../styles.css?url";
 
@@ -125,10 +126,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider initialLocale={initialLocale}>
-        <CartProvider>
-          <Outlet />
-          <CartDrawer />
-        </CartProvider>
+        <CatalogProvider>
+          <CartProvider>
+            <Outlet />
+            <CartDrawer />
+          </CartProvider>
+        </CatalogProvider>
       </I18nProvider>
     </QueryClientProvider>
   );
