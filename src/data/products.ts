@@ -206,12 +206,44 @@ export function buildV2ModelProduct(m: V2Model, view?: V2ModelView): Product {
   };
 }
 
+// Bir configSlug (ör. kart-100-mat-lam) için temiz "Arabanı Tasarla" başlangıç
+// ürünü — katalogda bu slug'la bir vitrin ürünü olmasa da konfigüratör açılsın.
+function buildConfigDefaultProduct(configSlug: string): Product | undefined {
+  const cp = CONFIG_PRODUCTS.find((c) => c.slug === configSlug);
+  if (!cp) return undefined;
+  const img = v2Src(cp.size, "krom", "tutamac", "beyaz", false, 1, true) ?? "";
+  const specs = specsFor(cp.size);
+  return {
+    slug: configSlug,
+    configSlug,
+    title: `Design — ${cp.label.en}`,
+    price: `${formatPrice(cp.basePrice)} USD`,
+    image: img,
+    finish: cp.finish,
+    gallery: [],
+    tagline: "Mobile Cart — fully customizable",
+    description: DESC_EN,
+    features: baseFeaturesEn,
+    specs: specs.en,
+    tr: {
+      title: `Tasarla — ${cp.label.tr}`,
+      tagline: "Mobil Araba — tamamen özelleştirilebilir",
+      description: DESC_TR,
+      features: baseFeatures,
+      specs: specs.tr,
+    },
+  };
+}
+
 export function getProduct(slug: string): Product | undefined {
   if (slug.startsWith("model-")) {
     const m = getV2Model(slug.slice("model-".length));
     return m ? buildV2ModelProduct(m) : undefined;
   }
-  return products.find((p) => p.slug === slug);
+  const found = products.find((p) => p.slug === slug);
+  if (found) return found;
+  // Katalogda yoksa configSlug olabilir → konfigüratör başlangıç ürünü üret.
+  return buildConfigDefaultProduct(slug);
 }
 
 /**
