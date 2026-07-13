@@ -11,6 +11,9 @@ export const en = {
     shop: "Shop",
     home: "Home",
     allProducts: "All products",
+    hemenTasarla: "Design Now",
+    ornekTasarimlar: "Example Designs",
+    tasarimlarim: "My Designs",
   },
 
   hero: {

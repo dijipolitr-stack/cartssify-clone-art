@@ -4,6 +4,11 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
+  "vars": {
+    // Teklif taleplerinin gideceği adres (gizli değil). RESEND_API_KEY ve
+    // opsiyonel QUOTE_FROM_EMAIL secret olarak `wrangler secret put` ile eklenir.
+    "QUOTE_TO_EMAIL": "selinefe@standatelier.com",
+  },
   "d1_databases": [
     {
       "binding": "DB",

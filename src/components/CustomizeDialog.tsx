@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { QuoteDialog } from "@/components/QuoteDialog";
 import type { Product } from "@/data/products";
-import { useCart } from "@/lib/cart";
 import { useI18n } from "@/lib/i18n";
 import {
   ANGLES,
@@ -132,7 +132,13 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     roRef.current.observe(el);
   }, []);
 
-  const { addItem, openCart } = useCart();
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [quoteData, setQuoteData] = useState<{
+    summary: string;
+    productTitle: string;
+    total: string;
+    previewImage?: string;
+  }>({ summary: "", productTitle: "", total: "" });
 
   const tenteOn = selection.kumasTente === "var";
 
@@ -445,11 +451,9 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
       reader.readAsDataURL(file);
     };
 
-  const handleAdd = () => {
+  // Tam konfigürasyonu metne döker (teklif özeti + mailde birebir görünsün diye).
+  const buildSummaryLines = (): string[] => {
     const cp = getConfigProduct(productId);
-
-    // Sipariş notu — placeholder fiyat/önizleme döneminde tam konfigürasyonu
-    // metne dökerek üretim için kaybolmamasını garanti eder.
     const lines: string[] = [];
     lines.push(`${ui.material}: ${pick(cp.label, locale)}`);
     for (const c of CRITERIA) {
@@ -479,31 +483,28 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     if (assets.logo) lines.push(`${ui.labelLogo}: ${assets.logo.name}`);
     if (assets.giydirme) lines.push(`${ui.labelGiydirme}: ${assets.giydirme.name}`);
     if (notes.trim()) lines.push(`\n${notes.trim()}`);
+    return lines;
+  };
 
-    const customized: Product = {
-      ...product,
-      slug: `${cp.slug}--${Object.values(selection).join("-")}`.toLowerCase(),
-      title: `${pick(cp.label, locale)} — ${pick(getOption("govdeRengi", selection.govdeRengi)!.label, locale)}`,
-      price: `${formatPrice(total)} USD`,
-      image: previewSrc,
-      description: pick(cp.label, locale),
-      features: [],
-    };
-
-    addItem(customized, 1, {
-      notes: lines.join("\n"),
-      logoFilename: assets.logo?.name ?? assets.giydirme?.name ?? undefined,
+  // "Teklif al" → özeti hazırla ve ön teklif talebi formunu aç.
+  const handleGetQuote = () => {
+    const cp = getConfigProduct(productId);
+    setQuoteData({
+      summary: buildSummaryLines().join("\n"),
+      productTitle: `${pick(cp.label, locale)} — ${pick(getOption("govdeRengi", selection.govdeRengi)!.label, locale)}`,
+      total: formatPrice(total),
+      previewImage: previewSrc,
     });
-    onOpenChange(false);
-    openCart();
+    setQuoteOpen(true);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+    <Dialog open={open && !quoteOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl p-0 gap-0 overflow-hidden">
-        <div className="grid md:grid-cols-2 max-h-[88vh]">
+        <div className="grid md:grid-cols-2 max-h-[88vh] overflow-y-auto md:overflow-hidden">
           {/* ---- Sol: seçenekler ---- */}
-          <div className="p-6 md:p-8 overflow-y-auto">
+          <div className="p-6 md:p-8 md:overflow-y-auto">
             <h2 className="text-2xl md:text-3xl font-light tracking-tight">
               {ui.title}
             </h2>
@@ -810,10 +811,10 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                 <span className="text-2xl font-light">{formatPrice(total)}</span>
               </div>
               <button
-                onClick={handleAdd}
+                onClick={handleGetQuote}
                 className="w-full bg-foreground text-background py-4 text-sm tracking-[0.25em] uppercase hover:opacity-90 transition"
               >
-                {ui.addToCart}
+                {ui.getQuote}
               </button>
               <p className="mt-3 text-[11px] text-muted-foreground text-center">
                 {ui.leadTime}
@@ -823,6 +824,20 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
         </div>
       </DialogContent>
     </Dialog>
+
+    <QuoteDialog
+      open={quoteOpen}
+      onBack={() => setQuoteOpen(false)}
+      onFinish={() => {
+        setQuoteOpen(false);
+        onOpenChange(false);
+      }}
+      summary={quoteData.summary}
+      productTitle={quoteData.productTitle}
+      total={quoteData.total}
+      previewImage={quoteData.previewImage}
+    />
+    </>
   );
 }
 

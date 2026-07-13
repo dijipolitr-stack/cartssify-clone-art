@@ -12,8 +12,11 @@ export const tr: typeof en = {
     faq: "SSS",
     shopNow: "Mağaza",
     shop: "Mağaza",
-    home: "Ana sayfa",
+    home: "Ana Sayfa",
     allProducts: "Tüm ürünler",
+    hemenTasarla: "Hemen Tasarla",
+    ornekTasarimlar: "Örnek Tasarımlar",
+    tasarimlarim: "Tasarımlarım",
   },
 
   hero: {

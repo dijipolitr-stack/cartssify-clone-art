@@ -297,6 +297,10 @@ export function v2ColorId(govdeRengi: string): string {
  * hizalı, Gemini sadık-silme ile üretildi). Tüm 8 config için hazır (yani tekerlek
  * yok da tekerlekli kadar tam), o yüzden ayrı varlık listesi gerekmez.
  */
+// Render sürümü — beyaz/render dosyaları güncellendikçe bump et; tarayıcı cache'ini kırar
+// (aynı URL'yi eski webp ile cache'leyip yeni sürümü göstermeme sorununu çözer).
+export const RENDER_VERSION = "20260710d";
+
 export function v2Src(
   size: string,
   metal: string,
@@ -315,7 +319,7 @@ export function v2Src(
   if (color === "beyaz" && V2_NO_BEYAZ.has(key)) return null;
   const nn = String(frame).padStart(2, "0");
   const tekerYolu = tekerOn ? "" : "/tekeryok";
-  return `/renders/v2/${key}/${color}/${tente}${tekerYolu}/${nn}.webp`;
+  return `/renders/v2/${key}/${color}/${tente}${tekerYolu}/${nn}.webp?v=${RENDER_VERSION}`;
 }
 
 // --------------------------------------------------------------------------
@@ -522,6 +526,25 @@ export const CONFIG_UI: Record<Locale, {
   placeholderNote: string;
   yok: string;
   varText: string;
+  // Ön teklif talebi akışı
+  getQuote: string;
+  quoteTitle: string;
+  quoteIntro: string;
+  quoteDesignSummary: string;
+  quoteName: string;
+  quoteNamePh: string;
+  quotePhone: string;
+  quotePhonePh: string;
+  quoteEmail: string;
+  quoteEmailPh: string;
+  quoteContactHint: string;
+  quoteSend: string;
+  quoteSending: string;
+  quoteBack: string;
+  quoteClose: string;
+  quoteSuccess: string;
+  quoteError: string;
+  quoteEmailInvalid: string;
 }> = {
   tr: {
     title: "Arabanı tasarla",
@@ -551,6 +574,24 @@ export const CONFIG_UI: Record<Locale, {
     placeholderNote: "Gövde + tente rengi önizlemede gösterilir. Metal rengi ve yapısal seçimler siparişe yansır.",
     yok: "Yok",
     varText: "Var",
+    getQuote: "Teklif al",
+    quoteTitle: "Ön teklif talebi",
+    quoteIntro: "Tasarımınızın özeti aşağıda. İletişim bilgilerinizi bırakın, size özel teklifle dönelim.",
+    quoteDesignSummary: "Tasarım özeti",
+    quoteName: "Ad Soyad",
+    quoteNamePh: "Adınız (opsiyonel)",
+    quotePhone: "Telefon",
+    quotePhonePh: "05xx xxx xx xx",
+    quoteEmail: "E-posta",
+    quoteEmailPh: "ornek@mail.com",
+    quoteContactHint: "Size dönebilmemiz için telefon ve e-posta zorunludur.",
+    quoteSend: "Teklif talebini gönder",
+    quoteSending: "Gönderiliyor…",
+    quoteBack: "Geri dön",
+    quoteClose: "Kapat",
+    quoteSuccess: "Teklif talebiniz alındı. En kısa sürede size dönüş yapacağız.",
+    quoteError: "Gönderilemedi. Lütfen tekrar deneyin veya bizimle iletişime geçin.",
+    quoteEmailInvalid: "Geçerli bir e-posta adresi girin.",
   },
   en: {
     title: "Design your cart",
@@ -580,5 +621,23 @@ export const CONFIG_UI: Record<Locale, {
     placeholderNote: "Body + awning color is shown in the preview. Metal color and structural options are applied to your order.",
     yok: "None",
     varText: "Yes",
+    getQuote: "Get a quote",
+    quoteTitle: "Request a quote",
+    quoteIntro: "Your design summary is below. Leave your contact details and we'll get back with a tailored quote.",
+    quoteDesignSummary: "Design summary",
+    quoteName: "Full name",
+    quoteNamePh: "Your name (optional)",
+    quotePhone: "Phone",
+    quotePhonePh: "+90 5xx xxx xx xx",
+    quoteEmail: "Email",
+    quoteEmailPh: "you@mail.com",
+    quoteContactHint: "Phone and email are required so we can reach you.",
+    quoteSend: "Send quote request",
+    quoteSending: "Sending…",
+    quoteBack: "Back",
+    quoteClose: "Close",
+    quoteSuccess: "Your request has been received. We'll get back to you shortly.",
+    quoteError: "Could not send. Please try again or contact us.",
+    quoteEmailInvalid: "Enter a valid email address.",
   },
 };
