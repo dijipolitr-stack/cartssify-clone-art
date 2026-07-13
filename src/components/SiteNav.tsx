@@ -25,10 +25,10 @@ export function SiteNav(_props: { variant?: Variant }) {
           <Link to="/" activeOptions={{ exact: true }} className={LINK} activeProps={{ className: LINK_ACTIVE }}>
             {t.nav.home}
           </Link>
-          <Link to="/products" className={LINK} activeProps={{ className: LINK_ACTIVE }}>
+          <Link to="/" search={{ tasarla: true }} className={LINK}>
             {t.nav.hemenTasarla}
           </Link>
-          <Link to="/products" className={LINK}>
+          <Link to="/products" search={{}} className={LINK} activeProps={{ className: LINK_ACTIVE }}>
             {t.nav.ornekTasarimlar}
           </Link>
           <Link to="/about" className={LINK} activeProps={{ className: LINK_ACTIVE }}>
@@ -42,7 +42,8 @@ export function SiteNav(_props: { variant?: Variant }) {
         <div className="flex items-center gap-3 shrink-0">
           <LanguageSwitcher />
           <Link
-            to="/products"
+            to="/"
+            search={{ tasarla: true }}
             className="hidden sm:inline-flex items-center gap-2 text-xs font-medium tracking-[0.12em] uppercase text-[#1E1E1E] border border-[#B89B5E] rounded-md px-4 py-2.5 hover:bg-[#B89B5E] hover:text-white transition"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
