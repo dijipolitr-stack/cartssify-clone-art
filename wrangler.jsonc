@@ -16,4 +16,12 @@
       "database_id": "2f6eef11-4e1d-4532-aa80-5080862bc84a",
     },
   ],
+  // Marka örnek görselleri (admin'den yüklenen) burada saklanır; /assets/<key>
+  // ile worker üzerinden servis edilir.
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "rumicarts-assets",
+    },
+  ],
 }

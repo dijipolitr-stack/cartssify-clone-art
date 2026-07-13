@@ -10,7 +10,27 @@ type D1Stmt = {
   all: () => Promise<D1Result>;
 };
 type D1Database = { prepare: (q: string) => D1Stmt };
-type AdminEnv = { DB?: D1Database; ADMIN_PASSWORD?: string };
+type R2Bucket = {
+  put: (key: string, value: ArrayBuffer | Uint8Array, opts?: { httpMetadata?: { contentType?: string } }) => Promise<unknown>;
+  delete: (key: string) => Promise<void>;
+};
+type AdminEnv = { DB?: D1Database; ADMIN_PASSWORD?: string; BUCKET?: R2Bucket };
+
+// base64 (data URL prefixsiz) → byte dizisi.
+function base64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+
+function extFromType(type: string): string {
+  if (/png/i.test(type)) return "png";
+  if (/jpe?g/i.test(type)) return "jpg";
+  if (/webp/i.test(type)) return "webp";
+  if (/svg/i.test(type)) return "svg";
+  return "bin";
+}
 
 function json(data: unknown, status = 200, extraHeaders?: Record<string, string>): Response {
   return new Response(JSON.stringify(data), {
@@ -94,6 +114,67 @@ export async function handleAdmin(request: Request, env: AdminEnv): Promise<Resp
         slug,
       )
       .run();
+    return json({ ok: true });
+  }
+
+  // --- Marka örnek kartları: listele ---
+  if (path === "/api/admin/examples" && request.method === "GET") {
+    const { results } = await env.DB.prepare(
+      "SELECT id, title, description, color_tag, image_key, sort_order, created_at FROM examples ORDER BY sort_order ASC, created_at DESC",
+    ).all();
+    return json({ examples: results ?? [] });
+  }
+
+  // --- Marka örnek kartı: ekle (görsel R2'ye, meta D1'e) ---
+  if (path === "/api/admin/examples" && request.method === "POST") {
+    if (!env.BUCKET) return json({ error: "BUCKET binding missing" }, 500);
+    let body: {
+      title?: string;
+      description?: string;
+      color_tag?: string;
+      image?: { content?: string; type?: string };
+    };
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "bad json" }, 400);
+    }
+    const title = (body.title || "").trim();
+    const img = body.image;
+    if (!title) return json({ error: "başlık gerekli" }, 400);
+    if (!img?.content) return json({ error: "görsel gerekli" }, 400);
+    const bytes = base64ToBytes(img.content);
+    if (bytes.length > 8 * 1024 * 1024) return json({ error: "görsel çok büyük (maks 8MB)" }, 413);
+    const id = crypto.randomUUID();
+    const key = `examples/${id}.${extFromType(img.type || "")}`;
+    await env.BUCKET.put(key, bytes, { httpMetadata: { contentType: img.type || "application/octet-stream" } });
+    await env.DB.prepare(
+      "INSERT INTO examples (id, title, description, color_tag, image_key, sort_order, created_at) VALUES (?,?,?,?,?,?,?)",
+    )
+      .bind(id, title, (body.description || "").trim(), (body.color_tag || "").trim(), key, 0, new Date().toISOString())
+      .run();
+    return json({ ok: true, id });
+  }
+
+  // --- Marka örnek kartı: sil (R2 + D1) ---
+  if (path === "/api/admin/examples" && request.method === "DELETE") {
+    let body: { id?: string };
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "bad json" }, 400);
+    }
+    if (!body.id) return json({ error: "id gerekli" }, 400);
+    const { results } = await env.DB.prepare("SELECT image_key FROM examples WHERE id=?").bind(body.id).all();
+    const key = results?.[0]?.image_key as string | undefined;
+    if (key && env.BUCKET) {
+      try {
+        await env.BUCKET.delete(key);
+      } catch {
+        // R2 silme hatası olsa da D1 kaydını temizle.
+      }
+    }
+    await env.DB.prepare("DELETE FROM examples WHERE id=?").bind(body.id).run();
     return json({ ok: true });
   }
 

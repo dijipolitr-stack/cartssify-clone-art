@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { TopBar } from "@/components/TopBar";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -104,6 +104,15 @@ const TXT: Record<Locale, {
 const GOLD = "#B89B5E";
 const INK = "#1E1E1E";
 
+// Admin'in eklediği marka örnek kartı (/api/examples).
+type BrandExample = {
+  id: string;
+  title: string;
+  description: string;
+  color_tag: string;
+  image_url: string;
+};
+
 // Tüm kombinasyonlar (modül düzeyinde bir kez) — 8 model × 5 renk × 2 tente × 2 teker.
 type Combo = {
   key: string;
@@ -183,6 +192,22 @@ function ProductsPage() {
   const [tentes, setTentes] = useState<Set<string>>(new Set()); // "var" | "yok"
   const [tekers, setTekers] = useState<Set<string>>(new Set()); // "var" | "yok"
 
+  // Marka örnek kartları (admin'in eklediği) + lightbox.
+  const [brandExamples, setBrandExamples] = useState<BrandExample[]>([]);
+  const [lightbox, setLightbox] = useState<BrandExample | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/examples")
+      .then((r) => (r.ok ? r.json() : { examples: [] }))
+      .then((d: { examples?: BrandExample[] }) => {
+        if (alive) setBrandExamples(d.examples ?? []);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const combos = useMemo(
     () =>
       ALL_COMBOS.filter((x) => {
@@ -227,6 +252,40 @@ function ProductsPage() {
             {tx.intro}
           </p>
         </div>
+
+        {/* ---- Marka örnekleri (admin'in eklediği) ---- */}
+        {brandExamples.length > 0 && (
+          <div className="mb-14">
+            <p className="text-xs tracking-[0.2em] uppercase mb-4" style={{ color: GOLD }}>
+              {locale === "tr" ? "Marka Tasarımları" : "Brand Designs"}
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8">
+              {brandExamples.map((ex) => (
+                <button
+                  key={ex.id}
+                  type="button"
+                  onClick={() => setLightbox(ex)}
+                  className="group text-left"
+                >
+                  <div className="aspect-square overflow-hidden rounded-lg" style={{ background: "#ECE7DD" }}>
+                    <img
+                      src={ex.image_url}
+                      alt={ex.title}
+                      loading="lazy"
+                      className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-[1.04]"
+                    />
+                  </div>
+                  <h3 className="mt-3 text-sm font-medium leading-snug" style={{ color: INK }}>
+                    {ex.title}
+                  </h3>
+                  {ex.color_tag && (
+                    <p className="mt-0.5 text-xs" style={{ color: "#5F5F5A" }}>{ex.color_tag}</p>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid md:grid-cols-[240px_1fr] gap-8 lg:gap-12">
           {/* ---- Filtre paneli ---- */}
@@ -377,6 +436,40 @@ function ProductsPage() {
         </div>
       </main>
       <SiteFooter topMargin />
+
+      {/* Marka örneği lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70"
+          onClick={() => setLightbox(null)}
+        >
+          <div
+            className="max-w-3xl w-full bg-white rounded-lg overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img src={lightbox.image_url} alt={lightbox.title} className="w-full max-h-[70vh] object-contain bg-[#ECE7DD]" />
+            <div className="p-5">
+              <div className="flex items-start justify-between gap-4">
+                <h3 className="text-lg font-medium" style={{ color: INK }}>{lightbox.title}</h3>
+                <button
+                  type="button"
+                  onClick={() => setLightbox(null)}
+                  className="flex-none text-sm text-[#5F5F5A] hover:text-[#1E1E1E]"
+                  aria-label="Kapat"
+                >
+                  ✕
+                </button>
+              </div>
+              {lightbox.color_tag && (
+                <p className="mt-1 text-xs" style={{ color: GOLD }}>{lightbox.color_tag}</p>
+              )}
+              {lightbox.description && (
+                <p className="mt-3 text-sm leading-relaxed" style={{ color: "#5F5F5A" }}>{lightbox.description}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

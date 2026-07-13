@@ -90,6 +90,16 @@ export default {
         const { handleCatalog } = await import("./lib/catalog-handler");
         return await handleCatalog(request, env as Parameters<typeof handleCatalog>[1]);
       }
+      // Public marka örnek kartları (admin'in eklediği).
+      if (url.pathname === "/api/examples") {
+        const { handlePublicExamples } = await import("./lib/examples-handler");
+        return await handlePublicExamples(request, env as Parameters<typeof handlePublicExamples>[1]);
+      }
+      // R2 görsel servis (marka örnek görselleri).
+      if (url.pathname.startsWith("/assets/")) {
+        const { serveAsset } = await import("./lib/examples-handler");
+        return await serveAsset(request, env as Parameters<typeof serveAsset>[1]);
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
