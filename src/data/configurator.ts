@@ -287,6 +287,66 @@ export function v2ColorId(govdeRengi: string): string {
   return govdeRengi === "ozel" ? "beyaz" : govdeRengi;
 }
 
+// --------------------------------------------------------------------------
+// V2 MODELLER — "Örnekler" sayfasının filtreleyeceği temel ürün kartları.
+// Her model = boyut × metal × yapı (raf/tutamaç); renk/tente/tekerlek kartın
+// GÖRÜNÜMÜNÜ değiştiren filtrelerdir (yeni kart açmaz). Render kütüphanesinden
+// (V2_CONFIGS) türetilir, ayrı veri tutulmaz.
+// --------------------------------------------------------------------------
+export type V2Yapi = "rafli" | "tutamacli";
+
+export type V2Model = {
+  /** Render klasör anahtarı, ör. "150-krom-rafli". */
+  key: string;
+  size: "100cm" | "150cm";
+  /** Konfigüratör boyut kodu (100/150). */
+  sizeCm: "100" | "150";
+  metal: "krom" | "pirinc";
+  yapi: V2Yapi;
+  /** tutamacRaf kriter değeri (raf/tutamac). */
+  tutamacRaf: "raf" | "tutamac";
+  label: Bi;
+};
+
+/** Renk seçenekleri örnekler grid'inde (render'ı olan renkler; "özel" hariç). */
+export const V2_MODEL_COLORS: OptionValue[] = COLOR_VALUES.filter((c) => !c.isCustom);
+
+function parseV2Model(key: string): V2Model {
+  const [sizeCm, metal, tip] = key.split("-") as ["100" | "150", "krom" | "pirinc", V2Yapi];
+  const size = sizeCm === "150" ? "150cm" : "100cm";
+  const yapi: V2Yapi = tip === "rafli" ? "rafli" : "tutamacli";
+  const tutamacRaf = yapi === "rafli" ? "raf" : "tutamac";
+  const metalTr = metal === "pirinc" ? "Pirinç" : "Krom";
+  const metalEn = metal === "pirinc" ? "Brass" : "Chrome";
+  const yapiTr = yapi === "rafli" ? "Raflı" : "Tutamaçlı";
+  const yapiEn = yapi === "rafli" ? "With Shelf" : "With Handle";
+  return {
+    key,
+    size,
+    sizeCm,
+    metal,
+    yapi,
+    tutamacRaf,
+    label: {
+      tr: `${sizeCm} cm · ${metalTr} · ${yapiTr}`,
+      en: `${sizeCm} cm · ${metalEn} · ${yapiEn}`,
+    },
+  };
+}
+
+/** 8 temel model — boyut → metal → yapı sırasıyla sabit dizilim. */
+export const V2_MODELS: V2Model[] = [...V2_CONFIGS]
+  .map(parseV2Model)
+  .sort((a, b) => {
+    if (a.sizeCm !== b.sizeCm) return a.sizeCm < b.sizeCm ? -1 : 1;
+    if (a.metal !== b.metal) return a.metal < b.metal ? -1 : 1; // krom < pirinc
+    return a.yapi < b.yapi ? -1 : 1; // rafli < tutamacli
+  });
+
+export function getV2Model(key: string): V2Model | undefined {
+  return V2_MODELS.find((m) => m.key === key);
+}
+
 /**
  * v2 önizleme yolu. Config migre edilmemişse null (eski sisteme düş).
  * Tente durumu hazır değilse yol döner ama caller "hazırlanıyor" gösterebilir;

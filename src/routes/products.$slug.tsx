@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getProduct, products, localizeProduct, type Product } from "@/data/products";
+import { getProduct, products, localizeProduct, buildV2ModelProduct, type Product } from "@/data/products";
+import { getV2Model } from "@/data/configurator";
 import { TopBar } from "@/components/TopBar";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -11,6 +12,20 @@ import { useI18n, useT } from "@/lib/i18n";
 export const Route = createFileRoute("/products/$slug")({
   component: ProductDetail,
   notFoundComponent: NotFound,
+  // Örnekler grid'inden gelen görünüm ön-seçimi (renk/tente/teker) + eski ?configure.
+  // Tüm anahtarlar opsiyonel → başka Link'ler search vermeden de bağlanabilir.
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { configure?: true; govde?: string; tente?: 0 | 1; teker?: 0 | 1 } => {
+    const out: { configure?: true; govde?: string; tente?: 0 | 1; teker?: 0 | 1 } = {};
+    if (search.configure !== undefined) out.configure = true;
+    if (typeof search.govde === "string") out.govde = search.govde;
+    if (search.tente === 1 || search.tente === "1") out.tente = 1;
+    else if (search.tente === 0 || search.tente === "0") out.tente = 0;
+    if (search.teker === 1 || search.teker === "1") out.teker = 1;
+    else if (search.teker === 0 || search.teker === "0") out.teker = 0;
+    return out;
+  },
   loader: ({ params }) => {
     const product = getProduct(params.slug);
     if (!product) throw notFound();
@@ -49,10 +64,24 @@ function NotFound() {
 
 function ProductDetail() {
   const loader = Route.useLoaderData() as { product: Product };
+  const search = Route.useSearch();
   const { locale } = useI18n();
-  // Re-localize the loader product on every render so the visible content
+  // v2 model kartı ise, örnekler grid'inden gelen görünümü (renk/tente/teker)
+  // uygula → galeri + konfigüratör ön-seçimi seçilen görünümle eşleşir.
+  const base = loader.product.v2ModelKey
+    ? (() => {
+        const m = getV2Model(loader.product.v2ModelKey!);
+        if (!m) return loader.product;
+        return buildV2ModelProduct(m, {
+          color: search.govde,
+          tenteOn: search.tente === 1,
+          tekerOn: search.teker !== 0,
+        });
+      })()
+    : loader.product;
+  // Re-localize the product on every render so the visible content
   // changes immediately when the user toggles the language switcher.
-  const product = localizeProduct(loader.product, locale);
+  const product = localizeProduct(base, locale);
   const t = useT();
   const images = [product.image, ...(product.gallery ?? [])];
   const detailImages = product.detailImages ?? [];
@@ -268,6 +297,7 @@ function ProductDetail() {
                 key={p.slug}
                 to="/products/$slug"
                 params={{ slug: p.slug }}
+                search={{}}
                 className="group"
               >
                 <div className="aspect-square overflow-hidden bg-secondary">

@@ -1,4 +1,11 @@
-import { CONFIG_PRODUCTS, formatPrice, type Selection } from "@/data/configurator";
+import {
+  CONFIG_PRODUCTS,
+  formatPrice,
+  type Selection,
+  type V2Model,
+  getV2Model,
+  v2Src,
+} from "@/data/configurator";
 
 export type Product = {
   slug: string;
@@ -20,6 +27,8 @@ export type Product = {
   configSlug?: string;
   /** Kart açılınca CustomizeDialog'un ön-seçeceği renk + varyant (raf/tente/tekerlek). */
   init?: Partial<Selection>;
+  /** Örnekler grid'inden türetilmiş v2 model kartıysa render klasör anahtarı. */
+  v2ModelKey?: string;
   /** Türkçe alan çevirileri; locale `tr` iken bunlar render edilir. */
   tr?: {
     title?: string;
@@ -144,7 +153,64 @@ export const products: Product[] = [
   makeProduct({ slug: "kart-150-beyaz-tentesiz-lake", configSlug: "kart-150-parlak-lake", size: "150cm", image: "/products/g150-beyaz-tentesiz.webp", finish: "lake", titleEn: "150 cm · White · No Awning · Lacquer", titleTr: "150 cm · Beyaz · Tentesiz · Lake", init: { govdeRengi: "beyaz", kumasTente: "yok", dekoratifTekerlek: "var", tutamacRaf: "tutamac" }, gallery: [] }),
 ];
 
-export function getProduct(slug: string) {
+// --------------------------------------------------------------------------
+// V2 MODEL ÜRÜNLERİ — "Örnekler" grid'inin 8 temel modeli (boyut×metal×yapı).
+// Detay sayfası bunları slug "model-<key>" ile dinamik çözer; görsel + galeri +
+// konfigüratör ön-seçimi verilen renk/tente/tekerlek görünümünden üretilir.
+// --------------------------------------------------------------------------
+export type V2ModelView = { color?: string; tenteOn?: boolean; tekerOn?: boolean };
+
+/** Bir modelin 7 katalog karesini (verilen görünümle) URL listesi olarak döndür. */
+function v2ModelFrames(m: V2Model, view: Required<V2ModelView>): string[] {
+  const frames: string[] = [];
+  for (let f = 1; f <= 7; f++) {
+    const src = v2Src(m.size, m.metal, m.tutamacRaf, view.color, view.tenteOn, f, view.tekerOn);
+    if (src) frames.push(src);
+  }
+  return frames;
+}
+
+export function buildV2ModelProduct(m: V2Model, view?: V2ModelView): Product {
+  const v = { color: view?.color ?? "beyaz", tenteOn: view?.tenteOn ?? false, tekerOn: view?.tekerOn ?? true };
+  const configSlug = m.size === "150cm" ? "kart-150-mat-lam" : "kart-100-mat-lam";
+  const cp = CONFIG_PRODUCTS.find((c) => c.slug === configSlug)!;
+  const frames = v2ModelFrames(m, v);
+  const specs = specsFor(m.size);
+  return {
+    slug: `model-${m.key}`,
+    configSlug,
+    title: m.label.en,
+    price: `${formatPrice(cp.basePrice)} USD`,
+    image: frames[0] ?? "",
+    finish: "mat",
+    gallery: frames.slice(1),
+    v2ModelKey: m.key,
+    init: {
+      govdeRengi: v.color,
+      kumasTente: v.tenteOn ? "var" : "yok",
+      dekoratifTekerlek: v.tekerOn ? "var" : "yok",
+      metalRengi: m.metal,
+      tutamacRaf: m.tutamacRaf,
+    },
+    tagline: "Mobile Cart — fully customizable",
+    description: DESC_EN,
+    features: baseFeaturesEn,
+    specs: specs.en,
+    tr: {
+      title: m.label.tr,
+      tagline: "Mobil Araba — tamamen özelleştirilebilir",
+      description: DESC_TR,
+      features: baseFeatures,
+      specs: specs.tr,
+    },
+  };
+}
+
+export function getProduct(slug: string): Product | undefined {
+  if (slug.startsWith("model-")) {
+    const m = getV2Model(slug.slice("model-".length));
+    return m ? buildV2ModelProduct(m) : undefined;
+  }
   return products.find((p) => p.slug === slug);
 }
 

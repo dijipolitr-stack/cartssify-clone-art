@@ -79,6 +79,7 @@ export function CartDrawer() {
                     <Link
                       to="/products/$slug"
                       params={{ slug: item.slug }}
+                      search={{}}
                       onClick={closeCart}
                       className="text-sm font-medium leading-snug hover:underline"
                     >
