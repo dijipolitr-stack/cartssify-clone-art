@@ -10,6 +10,7 @@ type QuoteEnv = {
   QUOTE_FROM_EMAIL?: string;
 };
 
+type QuoteImage = { filename?: string; content?: string; type?: string };
 type QuotePayload = {
   name?: string;
   phone?: string;
@@ -17,6 +18,10 @@ type QuotePayload = {
   summary?: string;
   productTitle?: string;
   total?: string;
+  logoWanted?: boolean;
+  wrapWanted?: boolean;
+  logoImage?: QuoteImage | null;
+  wrapImage?: QuoteImage | null;
 };
 
 function json(data: unknown, status = 200): Response {
@@ -62,6 +67,19 @@ export async function handleQuote(request: Request, env: QuoteEnv): Promise<Resp
   if (!phone) return json({ error: "phone required", field: "phone" }, 422);
   if (!email || !EMAIL_RE.test(email)) return json({ error: "email invalid", field: "email" }, 422);
 
+  // Markalama talebi + e-posta ekleri (logo / giydirme görselleri).
+  const logoWanted = !!p.logoWanted;
+  const wrapWanted = !!p.wrapWanted;
+  const evetHayir = (b: boolean) => (b ? "Evet" : "Hayır");
+  const attachments: { filename: string; content: string }[] = [];
+  const addImage = (img: QuoteImage | null | undefined, fallback: string) => {
+    if (!img?.content) return false;
+    attachments.push({ filename: img.filename || fallback, content: img.content });
+    return true;
+  };
+  const logoAttached = logoWanted && addImage(p.logoImage, "logo");
+  const wrapAttached = wrapWanted && addImage(p.wrapImage, "giydirme");
+
   const subject = `Yeni teklif talebi${productTitle ? ` — ${productTitle}` : ""}`;
 
   const textLines = [
@@ -73,6 +91,11 @@ export async function handleQuote(request: Request, env: QuoteEnv): Promise<Resp
     "",
     productTitle ? `Ürün: ${productTitle}` : "",
     total ? `Tahmini tutar: ${total}` : "",
+    "",
+    "— MARKALAMA —",
+    `Logo isteniyor: ${evetHayir(logoWanted)}${logoWanted && !logoAttached ? " (görsel eklenmedi)" : ""}`,
+    `Giydirme isteniyor: ${evetHayir(wrapWanted)}${wrapWanted && !wrapAttached ? " (görsel eklenmedi)" : ""}`,
+    attachments.length ? `Ekli görsel: ${attachments.map((a) => a.filename).join(", ")}` : "",
     "",
     "— TASARIM ÖZETİ —",
     summary || "(özet yok)",
@@ -88,6 +111,9 @@ export async function handleQuote(request: Request, env: QuoteEnv): Promise<Resp
     `<tr><td style="padding:2px 12px 2px 0;color:#666">E-posta</td><td><b>${esc(email)}</b></td></tr>` +
     (productTitle ? `<tr><td style="padding:2px 12px 2px 0;color:#666">Ürün</td><td>${esc(productTitle)}</td></tr>` : "") +
     (total ? `<tr><td style="padding:2px 12px 2px 0;color:#666">Tahmini tutar</td><td>${esc(total)}</td></tr>` : "") +
+    `<tr><td style="padding:2px 12px 2px 0;color:#666">Logo isteniyor</td><td><b>${evetHayir(logoWanted)}</b>${logoWanted && !logoAttached ? " (görsel eklenmedi)" : ""}</td></tr>` +
+    `<tr><td style="padding:2px 12px 2px 0;color:#666">Giydirme isteniyor</td><td><b>${evetHayir(wrapWanted)}</b>${wrapWanted && !wrapAttached ? " (görsel eklenmedi)" : ""}</td></tr>` +
+    (attachments.length ? `<tr><td style="padding:2px 12px 2px 0;color:#666">Ekli görsel</td><td>${esc(attachments.map((a) => a.filename).join(", "))}</td></tr>` : "") +
     `</table>` +
     `<div style="color:#666;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Tasarım özeti</div>` +
     `<pre style="white-space:pre-wrap;background:#f6f6f6;border:1px solid #e5e5e5;border-radius:8px;padding:12px;margin:0;font-family:inherit">${esc(summary || "(özet yok)")}</pre>` +
@@ -109,6 +135,7 @@ export async function handleQuote(request: Request, env: QuoteEnv): Promise<Resp
         subject,
         text,
         html,
+        ...(attachments.length ? { attachments } : {}),
       }),
     });
     if (!r.ok) {

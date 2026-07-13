@@ -605,6 +605,16 @@ export const CONFIG_UI: Record<Locale, {
   quoteSuccess: string;
   quoteError: string;
   quoteEmailInvalid: string;
+  // Logo / giydirme talebi (mockup yerine basit soru + görsel yükleme)
+  quoteBranding: string;
+  quoteLogoQ: string;
+  quoteWrapQ: string;
+  quoteEvet: string;
+  quoteHayir: string;
+  quoteUploadLogo: string;
+  quoteUploadWrap: string;
+  quoteFileChoose: string;
+  quoteFileTooBig: string;
 }> = {
   tr: {
     title: "Arabanı tasarla",
@@ -652,6 +662,15 @@ export const CONFIG_UI: Record<Locale, {
     quoteSuccess: "Teklif talebiniz alındı. En kısa sürede size dönüş yapacağız.",
     quoteError: "Gönderilemedi. Lütfen tekrar deneyin veya bizimle iletişime geçin.",
     quoteEmailInvalid: "Geçerli bir e-posta adresi girin.",
+    quoteBranding: "Markalama",
+    quoteLogoQ: "Logo görünsün istiyor musunuz?",
+    quoteWrapQ: "Giydirme (tam yüzey baskı) yapmak istiyor musunuz?",
+    quoteEvet: "Evet",
+    quoteHayir: "Hayır",
+    quoteUploadLogo: "Logo görselini yükleyin (PNG/JPG/SVG)",
+    quoteUploadWrap: "Giydirme görselini yükleyin (PNG/JPG)",
+    quoteFileChoose: "Görsel seç",
+    quoteFileTooBig: "Dosya çok büyük (en fazla 5 MB).",
   },
   en: {
     title: "Design your cart",
@@ -699,5 +718,14 @@ export const CONFIG_UI: Record<Locale, {
     quoteSuccess: "Your request has been received. We'll get back to you shortly.",
     quoteError: "Could not send. Please try again or contact us.",
     quoteEmailInvalid: "Enter a valid email address.",
+    quoteBranding: "Branding",
+    quoteLogoQ: "Do you want your logo shown?",
+    quoteWrapQ: "Do you want a full-surface wrap print?",
+    quoteEvet: "Yes",
+    quoteHayir: "No",
+    quoteUploadLogo: "Upload your logo (PNG/JPG/SVG)",
+    quoteUploadWrap: "Upload your wrap design (PNG/JPG)",
+    quoteFileChoose: "Choose image",
+    quoteFileTooBig: "File too large (max 5 MB).",
   },
 };

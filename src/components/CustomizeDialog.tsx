@@ -466,22 +466,6 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
       }
       lines.push(`${pick(c.label, locale)}: ${val}`);
     }
-    const enabledSurfaces = mockupSurfaces.filter(
-      (s) => surfaces[s.id] && surfaces[s.id] !== "yok" && (s.group !== "tente" || tenteOn),
-    );
-    if (enabledSurfaces.length) {
-      lines.push(
-        `${ui.mockupTitle}: ` +
-          enabledSurfaces
-            .map(
-              (s) =>
-                `${pick(s.label, locale)} (${surfaces[s.id] === "giydirme" ? ui.labelGiydirme : ui.labelLogo})`,
-            )
-            .join(", "),
-      );
-    }
-    if (assets.logo) lines.push(`${ui.labelLogo}: ${assets.logo.name}`);
-    if (assets.giydirme) lines.push(`${ui.labelGiydirme}: ${assets.giydirme.name}`);
     if (notes.trim()) lines.push(`\n${notes.trim()}`);
     return lines;
   };
@@ -617,56 +601,9 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
               );
             })}
 
-            {/* Mockup — logo & giydirme */}
-            <Section title={ui.mockupTitle}>
-              {/* İki ayrı yükleme alanı */}
-              <div className="grid grid-cols-2 gap-3">
-                <AssetUpload
-                  label={ui.uploadLogo}
-                  asset={assets.logo}
-                  changeText={ui.assetChange}
-                  removeText={ui.logoRemove}
-                  onChange={onAssetChange("logo")}
-                  onRemove={() => setAssets((p) => ({ ...p, logo: null }))}
-                />
-                <AssetUpload
-                  label={ui.uploadGiydirme}
-                  asset={assets.giydirme}
-                  changeText={ui.assetChange}
-                  removeText={ui.logoRemove}
-                  onChange={onAssetChange("giydirme")}
-                  onRemove={() => setAssets((p) => ({ ...p, giydirme: null }))}
-                />
-              </div>
-
-              {/* Gövde yüzeyleri */}
-              <SurfaceGroup
-                heading={ui.surfacesGovde}
-                surfaces={mockupSurfaces.filter((s) => s.group === "govde")}
-                state={surfaces}
-                assets={assets}
-                ui={ui}
-                locale={locale}
-                onSet={setSurfaceFill}
-              />
-
-              {/* Tente yüzeyleri (tente "var" değilse pasif) */}
-              <SurfaceGroup
-                heading={ui.surfacesTente}
-                surfaces={mockupSurfaces.filter((s) => s.group === "tente")}
-                state={surfaces}
-                assets={assets}
-                ui={ui}
-                locale={locale}
-                disabled={!tenteOn}
-                disabledHint={ui.tenteRequired}
-                onSet={setSurfaceFill}
-              />
-
-              <p className="mt-3 text-[11px] text-muted-foreground/80 leading-snug">
-                {ui.mockupHint}
-              </p>
-            </Section>
+            {/* Not: Logo/giydirme mockup'ı kaldırıldı. Bunlar artık teklif formunda
+                (QuoteDialog) "Logo istiyor musunuz? / Giydirme?" sorularıyla toplanır;
+                yüklenen görseller e-posta ekine gider. */}
 
             {/* Notlar */}
             <Section title={ui.notes}>
