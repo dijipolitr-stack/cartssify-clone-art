@@ -42,11 +42,13 @@ def prompt(renk, config=""):
     d = DESC[renk]
     # config-tipine duyarli parca clause'u: rafli = yan MASA var/tutamac YOK; tutamacli = tersi
     c = config.lower()
+    metal = "brass/gold" if "pirinc" in c else "chrome/silver"
     if "rafli" in c:
         parts = (
             "Keep the fold-out side tables/shelves EXACTLY as they appear in the input (same side, "
             "same fold state). IMPORTANT: if the input shows a fold-out table on BOTH the left AND "
-            "the right, keep BOTH tables fully extended (each with its single brass support arm) — "
+            f"the right, keep BOTH tables fully extended (each with its single {metal} support arm "
+            f"that KEEPS its original {metal} metal color — do NOT turn the support arm gold or brass) — "
             "when removing the wheel do NOT drop, hide, shorten, or omit the far-side (usually LEFT) "
             "table. This cart has NO push handle — do NOT add, draw, or invent ANY handle, bar, rail, "
             "or chrome tube anywhere. Below the tables the body is a SOLID CLOSED rectangular cabinet "
