@@ -1,14 +1,15 @@
-// Ön teklif talebi -> Resend ile mail gönderimi.
+// Ön teklif talebi -> Brevo ile mail gönderimi.
 // Frontend konfigüratör özeti + müşteri adayının telefon/e-posta bilgisini POST eder;
-// burada (Cloudflare Worker) Resend API'siyle QUOTE_TO_EMAIL adresine mail atılır.
-// API anahtarı (RESEND_API_KEY) sunucuda kalır, tarayıcıya gitmez.
+// burada (Cloudflare Worker) Brevo API'siyle QUOTE_TO_ADDR adresine mail atılır.
+// Brevo tek-gönderici doğrulaması kullanır (DNS yok) → istediğimiz alıcıya gönderir.
+// API anahtarı (BREVO_API_KEY) sunucuda kalır, tarayıcıya gitmez.
 
 type QuoteEnv = {
-  RESEND_API_KEY?: string;
+  BREVO_API_KEY?: string;
   // Alıcı: QUOTE_TO_ADDR öncelikli (dashboard'da takılı eski QUOTE_TO_EMAIL'i aşmak için).
   QUOTE_TO_ADDR?: string;
   QUOTE_TO_EMAIL?: string;
-  // Gönderen adresi opsiyonel — domain doğrulanınca kendi adresin, yoksa Resend paylaşımlı.
+  // Gönderen: Brevo'da doğrulanmış gönderici e-postası (varsayılan dijipoli.tr@gmail.com).
   QUOTE_FROM_EMAIL?: string;
 };
 
@@ -47,9 +48,9 @@ export async function handleQuote(request: Request, env: QuoteEnv): Promise<Resp
 
   // env yalnızca deploy edilmiş worker'da (veya wrangler dev) doludur; vite dev'de undefined.
   const to = env?.QUOTE_TO_ADDR || env?.QUOTE_TO_EMAIL;
-  const key = env?.RESEND_API_KEY;
-  if (!key) return json({ error: "RESEND_API_KEY missing" }, 500);
-  if (!to) return json({ error: "QUOTE_TO_EMAIL missing" }, 500);
+  const key = env?.BREVO_API_KEY;
+  if (!key) return json({ error: "BREVO_API_KEY missing" }, 500);
+  if (!to) return json({ error: "QUOTE_TO missing" }, 500);
 
   let p: QuotePayload;
   try {
@@ -121,28 +122,32 @@ export async function handleQuote(request: Request, env: QuoteEnv): Promise<Resp
     `<pre style="white-space:pre-wrap;background:#f6f6f6;border:1px solid #e5e5e5;border-radius:8px;padding:12px;margin:0;font-family:inherit">${esc(summary || "(özet yok)")}</pre>` +
     `</div>`;
 
-  const from = env.QUOTE_FROM_EMAIL || "Rumicarts Teklif <onboarding@resend.dev>";
+  const fromEmail = env.QUOTE_FROM_EMAIL || "dijipoli.tr@gmail.com";
 
   try {
-    const r = await fetch("https://api.resend.com/emails", {
+    const r = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${key}`,
+        "api-key": key,
         "content-type": "application/json",
+        accept: "application/json",
       },
       body: JSON.stringify({
-        from,
-        to: [to],
-        reply_to: email, // "Yanıtla" dendiğinde müşteri adayına gider
+        sender: { name: "Rumicarts Teklif", email: fromEmail },
+        to: [{ email: to }],
+        replyTo: { email }, // "Yanıtla" dendiğinde müşteri adayına gider
         subject,
-        text,
-        html,
-        ...(attachments.length ? { attachments } : {}),
+        textContent: text,
+        htmlContent: html,
+        // Brevo eki: { name, content(base64) }
+        ...(attachments.length
+          ? { attachment: attachments.map((a) => ({ name: a.filename, content: a.content })) }
+          : {}),
       }),
     });
     if (!r.ok) {
       const body = await r.text();
-      console.error("Resend hata:", r.status, body);
+      console.error("Brevo hata:", r.status, body);
       return json({ error: "send failed", status: r.status }, 502);
     }
     return json({ ok: true });
