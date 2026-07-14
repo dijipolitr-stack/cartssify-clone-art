@@ -26,21 +26,38 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
+export type ModelItem = {
+  key: string;
+  base_price: number;
+  stock: number;
+  status: string;
+};
+
 export async function handleCatalog(_request: Request, env: CatalogEnv): Promise<Response> {
-  if (!env.DB) return json({ items: [] });
+  if (!env.DB) return json({ items: [], models: [], settings: {} });
   try {
-    const { results } = await env.DB.prepare(
-      "SELECT slug, base_price, in_stock, status FROM products",
-    ).all();
-    const items: CatalogItem[] = (results ?? []).map((r) => ({
+    const [prod, mdl, setg] = await Promise.all([
+      env.DB.prepare("SELECT slug, base_price, in_stock, status FROM products").all(),
+      env.DB.prepare("SELECT key, base_price, stock, status FROM models").all().catch(() => ({ results: [] })),
+      env.DB.prepare("SELECT key, value FROM settings").all().catch(() => ({ results: [] })),
+    ]);
+    const items: CatalogItem[] = (prod.results ?? []).map((r) => ({
       slug: String(r.slug),
       base_price: Number(r.base_price) || 0,
       in_stock: Number(r.in_stock) ? 1 : 0,
       status: String(r.status || "active"),
     }));
-    return json({ items });
+    const models: ModelItem[] = (mdl.results ?? []).map((r) => ({
+      key: String(r.key),
+      base_price: Number(r.base_price) || 0,
+      stock: Number(r.stock) || 0,
+      status: String(r.status || "active"),
+    }));
+    const settings: Record<string, string> = {};
+    for (const r of setg.results ?? []) settings[String(r.key)] = String(r.value ?? "");
+    return json({ items, models, settings });
   } catch {
     // Tablo yoksa veya hata olursa site statik değerlere düşer.
-    return json({ items: [] });
+    return json({ items: [], models: [], settings: {} });
   }
 }

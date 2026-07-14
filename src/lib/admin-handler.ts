@@ -117,6 +117,57 @@ export async function handleAdmin(request: Request, env: AdminEnv): Promise<Resp
     return json({ ok: true });
   }
 
+  // --- Modeller (boyut×metal×yapı): listele + lake farkı ---
+  if (path === "/api/admin/models" && request.method === "GET") {
+    const [mdl, setg] = await Promise.all([
+      env.DB.prepare("SELECT key, base_price, stock, status FROM models ORDER BY key").all(),
+      env.DB.prepare("SELECT key, value FROM settings").all(),
+    ]);
+    const settings: Record<string, string> = {};
+    for (const r of setg.results ?? []) settings[String(r.key)] = String(r.value ?? "");
+    return json({ models: mdl.results ?? [], settings });
+  }
+
+  // --- Model güncelle (fiyat/stok/durum) ---
+  if (path === "/api/admin/models" && request.method === "POST") {
+    let body: { key?: string; base_price?: number; stock?: number; status?: string };
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "bad json" }, 400);
+    }
+    if (!body.key) return json({ error: "key gerekli" }, 400);
+    await env.DB.prepare(
+      "UPDATE models SET base_price=?, stock=?, status=?, updated_at=? WHERE key=?",
+    )
+      .bind(
+        Math.max(0, Math.round(Number(body.base_price) || 0)),
+        Math.max(0, Math.round(Number(body.stock) || 0)),
+        String(body.status || "active"),
+        new Date().toISOString(),
+        body.key,
+      )
+      .run();
+    return json({ ok: true });
+  }
+
+  // --- Ayar güncelle (ör. lake_delta) ---
+  if (path === "/api/admin/settings" && request.method === "POST") {
+    let body: { key?: string; value?: string };
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "bad json" }, 400);
+    }
+    if (!body.key) return json({ error: "key gerekli" }, 400);
+    await env.DB.prepare(
+      "INSERT INTO settings (key, value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+    )
+      .bind(body.key, String(body.value ?? ""))
+      .run();
+    return json({ ok: true });
+  }
+
   // --- Marka örnek kartları: listele ---
   if (path === "/api/admin/examples" && request.method === "GET") {
     const { results } = await env.DB.prepare(

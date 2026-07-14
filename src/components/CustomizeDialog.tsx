@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { QuoteDialog } from "@/components/QuoteDialog";
 import type { Product } from "@/data/products";
 import { useI18n } from "@/lib/i18n";
-import { useCatalogOverride } from "@/lib/catalog";
+import { useModelOverride, useSetting } from "@/lib/catalog";
 import {
   ANGLES,
   FRAMES,
@@ -143,15 +143,32 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
 
   const tenteOn = selection.kumasTente === "var";
 
-  const rawTotal = useMemo(
-    () => computeTotal(productId, selection, surfaces),
-    [productId, selection, surfaces],
+  // MODEL BAZLI FİYAT: temel fiyat = seçilen model (boyut×metal×yapı) fiyatı (D1/admin).
+  // Metal ve raf farkı artık model fiyatına DAHİL; üstüne yalnız tente/teker/renk eklenir.
+  const cpForPrice = getConfigProduct(productId);
+  const modelKey = v2ConfigKey(cpForPrice.size, selection.metalRengi, selection.tutamacRaf);
+  const modelOverride = useModelOverride(modelKey);
+  const lakeDelta = Number(useSetting("lake_delta") ?? 0);
+  // Varsayılan model fiyatı (admin değeri yoksa): mat baz + metal farkı + raf farkı.
+  const matBase =
+    CONFIG_PRODUCTS.find((c) => c.size === cpForPrice.size && c.finish === "mat")?.basePrice ??
+    cpForPrice.basePrice;
+  const defaultModelBase =
+    matBase +
+    (getOption("metalRengi", selection.metalRengi)?.priceDelta ?? 0) +
+    (getOption("tutamacRaf", selection.tutamacRaf)?.priceDelta ?? 0);
+  const modelBase = modelOverride?.base_price ?? defaultModelBase;
+  // Birim fiyat = model fiyatı + (yüzey Lake ise lake farkı).
+  const effectiveBase = modelBase + (cpForPrice.finish === "lake" ? lakeDelta : 0);
+  // Üstüne eklenen farklar: tente + teker + renk(özel). Metal/raf HARİÇ (modele dahil).
+  const addonDeltas = (["kumasTente", "dekoratifTekerlek", "govdeRengi"] as CriterionId[]).reduce(
+    (sum, cid) => sum + (getOption(cid, selection[cid])?.priceDelta ?? 0),
+    0,
   );
-  // Admin (D1) fiyat override'ı: statik base yerine admin'in girdiği fiyat.
-  const priceOverride = useCatalogOverride(getConfigProduct(productId).slug);
-  const effectiveBase = priceOverride?.base_price ?? getConfigProduct(productId).basePrice;
-  // Toplam = ham toplam - statik base + admin base (opsiyon farkları korunur).
-  const total = rawTotal - getConfigProduct(productId).basePrice + effectiveBase;
+  const total = effectiveBase + addonDeltas;
+  // Model stok/durum (adet). 0 ise "tükendi" bilgisi gösterilir (teklif yine alınabilir).
+  const modelStock = modelOverride?.stock;
+  const modelStatus = modelOverride?.status;
 
   // --- Önizleme görseli -------------------------------------------------
   // Gövde rengine göre GERÇEK renkli V-Ray render'ı (beyaz + siyah/yeşil/mavi/
@@ -770,6 +787,20 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
                 </span>
                 <span className="text-2xl font-light">{formatPrice(total)}</span>
               </div>
+              {/* Model stok/durum bilgisi (admin D1). Teklif yine alınabilir. */}
+              {modelStatus === "coming_soon" ? (
+                <p className="mb-3 text-xs tracking-[0.15em] uppercase text-amber-700">
+                  {locale === "tr" ? "Çok yakında" : "Coming soon"}
+                </p>
+              ) : modelStock !== undefined && modelStock <= 0 ? (
+                <p className="mb-3 text-xs tracking-[0.15em] uppercase text-red-600">
+                  {locale === "tr" ? "Bu varyasyon stokta yok" : "This variation is out of stock"}
+                </p>
+              ) : modelStock !== undefined ? (
+                <p className="mb-3 text-xs text-muted-foreground">
+                  {locale === "tr" ? `Stok: ${modelStock} adet` : `In stock: ${modelStock}`}
+                </p>
+              ) : null}
               <button
                 onClick={handleGetQuote}
                 className="w-full bg-foreground text-background py-4 text-sm tracking-[0.25em] uppercase hover:opacity-90 transition"
