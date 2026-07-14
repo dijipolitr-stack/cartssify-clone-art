@@ -458,10 +458,17 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
     };
 
   // Tam konfigürasyonu metne döker (teklif özeti + mailde birebir görünsün diye).
+  // Her seçim açık etiketle + varsa fiyat farkıyla; sonda fiyat özeti.
   const buildSummaryLines = (): string[] => {
     const cp = getConfigProduct(productId);
+    const sizeLabel = cp.size === "150cm" ? "150 cm" : "100 cm";
+    const finishLabel =
+      cp.finish === "lake"
+        ? locale === "tr" ? "Parlak Lake" : "Glossy Lacquer"
+        : locale === "tr" ? "Mat Lam" : "Matte Laminate";
     const lines: string[] = [];
-    lines.push(`${ui.material}: ${pick(cp.label, locale)}`);
+    lines.push(`${locale === "tr" ? "Boyut" : "Size"}: ${sizeLabel}`);
+    lines.push(`${locale === "tr" ? "Yüzey" : "Finish"}: ${finishLabel}`);
     for (const c of CRITERIA) {
       if (!isCriterionActive(c, selection)) continue;
       const opt = getOption(c.id, selection[c.id]);
@@ -470,18 +477,28 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
       if (opt.isCustom && customText[c.id]?.trim()) {
         val += ` — ${customText[c.id]!.trim()}`;
       }
-      lines.push(`${pick(c.label, locale)}: ${val}`);
+      const delta = opt.priceDelta ? ` (+${formatPrice(opt.priceDelta)})` : "";
+      lines.push(`${pick(c.label, locale)}: ${val}${delta}`);
     }
-    if (notes.trim()) lines.push(`\n${notes.trim()}`);
+    lines.push("");
+    lines.push(`${locale === "tr" ? "Birim fiyat" : "Base price"}: ${formatPrice(effectiveBase)}`);
+    lines.push(`${ui.total}: ${formatPrice(total)}`);
+    if (notes.trim()) {
+      lines.push("");
+      lines.push(`${ui.notes}: ${notes.trim()}`);
+    }
     return lines;
   };
 
   // "Teklif al" → özeti hazırla ve ön teklif talebi formunu aç.
   const handleGetQuote = () => {
     const cp = getConfigProduct(productId);
+    const colorLabel = pick(getOption("govdeRengi", selection.govdeRengi)!.label, locale);
+    const metalLabel = pick(getOption("metalRengi", selection.metalRengi)!.label, locale);
+    const structLabel = pick(getOption("tutamacRaf", selection.tutamacRaf)!.label, locale);
     setQuoteData({
       summary: buildSummaryLines().join("\n"),
-      productTitle: `${pick(cp.label, locale)} — ${pick(getOption("govdeRengi", selection.govdeRengi)!.label, locale)}`,
+      productTitle: `${pick(cp.label, locale)} · ${metalLabel} · ${structLabel} — ${colorLabel}`,
       total: formatPrice(total),
       previewImage: previewSrc,
     });
