@@ -5,6 +5,8 @@
 
 type QuoteEnv = {
   RESEND_API_KEY?: string;
+  // Alıcı: QUOTE_TO_ADDR öncelikli (dashboard'da takılı eski QUOTE_TO_EMAIL'i aşmak için).
+  QUOTE_TO_ADDR?: string;
   QUOTE_TO_EMAIL?: string;
   // Gönderen adresi opsiyonel — domain doğrulanınca kendi adresin, yoksa Resend paylaşımlı.
   QUOTE_FROM_EMAIL?: string;
@@ -44,7 +46,7 @@ export async function handleQuote(request: Request, env: QuoteEnv): Promise<Resp
   if (request.method !== "POST") return json({ error: "method" }, 405);
 
   // env yalnızca deploy edilmiş worker'da (veya wrangler dev) doludur; vite dev'de undefined.
-  const to = env?.QUOTE_TO_EMAIL;
+  const to = env?.QUOTE_TO_ADDR || env?.QUOTE_TO_EMAIL;
   const key = env?.RESEND_API_KEY;
   if (!key) return json({ error: "RESEND_API_KEY missing" }, 500);
   if (!to) return json({ error: "QUOTE_TO_EMAIL missing" }, 500);

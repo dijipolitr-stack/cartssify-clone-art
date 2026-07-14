@@ -11,6 +11,9 @@
     // (dijipoli.tr@gmail.com) gönderilebilir. Domain doğrulanınca selinefe@standatelier.com'a
     // çevirip QUOTE_FROM_EMAIL'i kendi domaininden ver.
     "QUOTE_TO_EMAIL": "dijipoli.tr@gmail.com",
+    // Öncelikli alıcı — dashboard'da takılı kalan eski QUOTE_TO_EMAIL'i aşmak için
+    // yeni isim. Domain doğrulanınca buraya selinefe@standatelier.com yazılır.
+    "QUOTE_TO_ADDR": "dijipoli.tr@gmail.com",
   },
   "d1_databases": [
     {
