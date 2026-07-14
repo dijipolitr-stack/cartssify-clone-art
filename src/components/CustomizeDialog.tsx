@@ -148,7 +148,13 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   const cpForPrice = getConfigProduct(productId);
   const modelKey = v2ConfigKey(cpForPrice.size, selection.metalRengi, selection.tutamacRaf);
   const modelOverride = useModelOverride(modelKey);
-  const lakeDelta = Number(useSetting("lake_delta") ?? 0);
+  // Seçenek birim fiyatları admin'den (D1 settings); yoksa koddaki varsayılana düşer.
+  const setNum = (raw: string | undefined, fallback: number) =>
+    raw !== undefined && raw !== "" ? Number(raw) : fallback;
+  const lakeDelta = setNum(useSetting("lake_delta"), 300);
+  const tenteDelta = setNum(useSetting("tente_delta"), getOption("kumasTente", "var")?.priceDelta ?? 0);
+  const tekerDelta = setNum(useSetting("teker_delta"), getOption("dekoratifTekerlek", "var")?.priceDelta ?? 0);
+  const ozelDelta = setNum(useSetting("ozel_delta"), getOption("govdeRengi", "ozel")?.priceDelta ?? 0);
   // Varsayılan model fiyatı (admin değeri yoksa): mat baz + metal farkı + raf farkı.
   const matBase =
     CONFIG_PRODUCTS.find((c) => c.size === cpForPrice.size && c.finish === "mat")?.basePrice ??
@@ -160,11 +166,12 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
   const modelBase = modelOverride?.base_price ?? defaultModelBase;
   // Birim fiyat = model fiyatı + (yüzey Lake ise lake farkı).
   const effectiveBase = modelBase + (cpForPrice.finish === "lake" ? lakeDelta : 0);
-  // Üstüne eklenen farklar: tente + teker + renk(özel). Metal/raf HARİÇ (modele dahil).
-  const addonDeltas = (["kumasTente", "dekoratifTekerlek", "govdeRengi"] as CriterionId[]).reduce(
-    (sum, cid) => sum + (getOption(cid, selection[cid])?.priceDelta ?? 0),
-    0,
-  );
+  // Üstüne eklenen farklar (admin birim fiyatları): tente + teker + özel renk.
+  // Metal/raf modele dahil olduğu için burada YOK.
+  const addonDeltas =
+    (selection.kumasTente === "var" ? tenteDelta : 0) +
+    (selection.dekoratifTekerlek === "var" ? tekerDelta : 0) +
+    (selection.govdeRengi === "ozel" ? ozelDelta : 0);
   const total = effectiveBase + addonDeltas;
   // Model stok/durum (adet). 0 ise "tükendi" bilgisi gösterilir (teklif yine alınabilir).
   const modelStock = modelOverride?.stock;
@@ -494,7 +501,12 @@ export function CustomizeDialog({ product, open, onOpenChange }: Props) {
       if (opt.isCustom && customText[c.id]?.trim()) {
         val += ` — ${customText[c.id]!.trim()}`;
       }
-      const delta = opt.priceDelta ? ` (+${formatPrice(opt.priceDelta)})` : "";
+      // Fiyat farkı: tente/teker/özel renk admin birim fiyatı; metal/raf model fiyatına dahil (gösterme).
+      let d = 0;
+      if (c.id === "kumasTente" && selection.kumasTente === "var") d = tenteDelta;
+      else if (c.id === "dekoratifTekerlek" && selection.dekoratifTekerlek === "var") d = tekerDelta;
+      else if (c.id === "govdeRengi" && selection.govdeRengi === "ozel") d = ozelDelta;
+      const delta = d ? ` (+${formatPrice(d)})` : "";
       lines.push(`${pick(c.label, locale)}: ${val}${delta}`);
     }
     lines.push("");

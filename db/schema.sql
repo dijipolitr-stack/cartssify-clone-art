@@ -37,8 +37,13 @@ INSERT OR IGNORE INTO models (key, base_price, stock, status) VALUES
   ('150-pirinc-tutamacli',2280,10,'active');
 
 -- settings: genel ayarlar (ör. lake_delta = Lake yüzeyin sabit fiyat farkı).
+-- settings: seçenek birim fiyatları (arabaya eklenen her birimin farkı) + genel ayarlar.
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
-INSERT OR IGNORE INTO settings (key, value) VALUES ('lake_delta','300');
+INSERT OR IGNORE INTO settings (key, value) VALUES
+  ('lake_delta','300'),   -- Lake yüzey farkı
+  ('tente_delta','250'),  -- Kumaş tente
+  ('teker_delta','120'),  -- Dekoratif tekerlek
+  ('ozel_delta','150');   -- Özel renk
 
 -- examples: markanın admin panelinden kendi görselleriyle eklediği örnek/vitrin
 -- kartları. Görsel R2'de (image_key), meta bilgi burada. /products'ta gösterilir.

@@ -68,9 +68,9 @@ function AdminPage() {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // Model fiyat/stok (8 model: boyut×metal×yapı) + lake farkı
+  // Model fiyat/stok (8 model: boyut×metal×yapı) + seçenek birim fiyatları (settings)
   const [models, setModels] = useState<ModelRow[]>([]);
-  const [lakeDelta, setLakeDelta] = useState<number>(0);
+  const [settings, setSettings] = useState<Record<string, string>>({});
 
   // Marka örnek kartları
   const [examples, setExamples] = useState<ExRow[]>([]);
@@ -100,7 +100,26 @@ function AdminPage() {
     if (r.ok) {
       const d = (await r.json()) as { models: ModelRow[]; settings: Record<string, string> };
       setModels(d.models ?? []);
-      setLakeDelta(Number(d.settings?.lake_delta ?? 0));
+      setSettings(d.settings ?? {});
+    }
+  }
+
+  function editSetting(key: string, value: string) {
+    setSettings((s) => ({ ...s, [key]: value }));
+  }
+
+  async function saveSetting(key: string) {
+    setMsg("");
+    setBusy(true);
+    try {
+      const r = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ key, value: settings[key] ?? "" }),
+      });
+      setMsg(r.ok ? "✓ Kaydedildi" : "Kaydedilemedi");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -123,20 +142,6 @@ function AdminPage() {
     }
   }
 
-  async function saveLakeDelta() {
-    setMsg("");
-    setBusy(true);
-    try {
-      const r = await fetch("/api/admin/settings", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ key: "lake_delta", value: String(lakeDelta) }),
-      });
-      setMsg(r.ok ? "✓ Lake farkı kaydedildi" : "Kaydedilemedi");
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function loadExamples() {
     const r = await fetch("/api/admin/examples");
@@ -372,29 +377,46 @@ function AdminPage() {
         ))}
       </div>
 
+      {/* ---- Seçenek Fiyatları (birim farkları) ---- */}
+      <div className="mt-14">
+        <h2 className="text-xl font-medium mb-1">Seçenek Fiyatları</h2>
+        <p className="text-xs text-muted-foreground mb-6">
+          Bir arabaya eklenen her birimin fiyat farkı. Konfigüratörde model fiyatının üstüne eklenir.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { key: "tente_delta", label: "Kumaş Tente" },
+            { key: "teker_delta", label: "Dekoratif Tekerlek" },
+            { key: "ozel_delta", label: "Özel Renk" },
+            { key: "lake_delta", label: "Lake Yüzey" },
+          ].map((o) => (
+            <div key={o.key} className="border border-border p-4">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">{o.label} (USD)</div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={settings[o.key] ?? ""}
+                  onChange={(e) => editSetting(o.key, e.target.value)}
+                  className="w-24 border border-border bg-background px-2 py-1.5 text-sm focus:outline-none focus:border-foreground"
+                />
+                <button
+                  onClick={() => saveSetting(o.key)}
+                  disabled={busy}
+                  className="bg-foreground text-background text-xs uppercase tracking-wide px-3 py-2 hover:opacity-90 disabled:opacity-50"
+                >
+                  Kaydet
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* ---- Model Fiyat & Stok (8 model: boyut×metal×yapı) ---- */}
       <div className="mt-14">
-        <div className="flex items-end justify-between mb-1 flex-wrap gap-3">
-          <h2 className="text-xl font-medium">Model Fiyat & Stok</h2>
-          <label className="text-xs flex items-end gap-2">
-            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Lake yüzey farkı (USD)</span>
-            <input
-              type="number"
-              value={lakeDelta}
-              onChange={(e) => setLakeDelta(Number(e.target.value))}
-              className="w-24 border border-border bg-background px-2 py-1.5 text-sm focus:outline-none focus:border-foreground"
-            />
-            <button
-              onClick={saveLakeDelta}
-              disabled={busy}
-              className="bg-secondary border border-border text-xs px-3 py-1.5 hover:border-foreground disabled:opacity-50"
-            >
-              Kaydet
-            </button>
-          </label>
-        </div>
+        <h2 className="text-xl font-medium mb-1">Model Fiyat & Stok</h2>
         <p className="text-xs text-muted-foreground mb-6">
-          Temel fiyat = model (boyut × metal × yapı). Renk / tente / tekerlek farkları konfigüratörde üstüne eklenir; Lake yüzey yukarıdaki farkı ekler.
+          Temel fiyat = model (boyut × metal × yapı; metal ve raf/tutamaç dahil). Renk / tente / tekerlek / Lake farkları konfigüratörde üstüne eklenir (yukarıdaki "Seçenek Fiyatları").
         </p>
 
         <div className="space-y-3 mb-8">
